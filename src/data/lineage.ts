@@ -142,14 +142,14 @@ export const LINEAGE: LineageEntry[] = [
     brief:
       "Each regime contains the seeds of its own corruption. Decay is internal, not imposed.",
     claim:
-      "Republic VIII is the first complete account of endogenous institutional decay. Aristocracy gives way to timocracy when honour displaces virtue; timocracy to oligarchy when wealth displaces honour; oligarchy to democracy when the poor revolt against the rich; democracy to tyranny when the desire for liberty becomes insatiable. Each form generates its successor through its own internal logic. The chamber's central premise — that institutions decay from within — is here in its earliest systematic form.",
+      "Republic VIII is the first complete account of endogenous institutional decay. Aristocracy gives way to timocracy when honour displaces virtue; timocracy to oligarchy when wealth displaces honour; oligarchy to democracy when the poor revolt against the rich; democracy to tyranny when the desire for liberty becomes insatiable. Each form generates its successor through its own internal logic. The filter's central premise — that institutions decay from within — is here in its earliest systematic form.",
     passage:
       "The insatiable desire of this and the neglect of other things introduces the change in democracy, which occasions a demand for tyranny.",
     source:
       "Plato, Republic, tr. Benjamin Jowett (Oxford 1871, MIT Internet Classics Archive); Greek Slings OCT (2003).",
     url: "https://classics.mit.edu/Plato/republic.9.viii.html",
     honest_caveat:
-      "Plato's psychology — soul-of-the-city mirroring soul-of-the-man — is a stronger metaphysical claim than the chamber needs. The mechanism is portable; the cosmology is his.",
+      "Plato's psychology — soul-of-the-city mirroring soul-of-the-man — is a stronger metaphysical claim than the filter needs. The mechanism is portable; the cosmology is his.",
   },
   {
     id: "polybius-anacyclosis",
@@ -284,7 +284,7 @@ export const LINEAGE: LineageEntry[] = [
       "Sallust, Bellum Iugurthinum, ed. L. D. Reynolds (OCT, 1991); the line at Iug. 35.10 is widely transmitted.",
     url: "https://en.wikipedia.org/wiki/Bellum_Jugurthinum",
     honest_caveat:
-      "Sallust is openly moralistic; the chamber framing is descriptive. The line is reported speech (Jugurtha's), not a structural theorem — but Sallust's narrative endorses it.",
+      "Sallust is openly moralistic; the filter framing is descriptive. The line is reported speech (Jugurtha's), not a structural theorem — but Sallust's narrative endorses it.",
   },
   {
     id: "augustine-libido-dominandi",
@@ -397,7 +397,7 @@ export const LINEAGE: LineageEntry[] = [
     brief:
       "Once civic virtue is lost in the population, no institutional reform reaches deep enough to restore it.",
     claim:
-      "Machiavelli reads Polybius into Roman history and arrives at a darker conclusion than his source. Discorsi I.17–18: a corrupt people, even when they obtain liberty, can scarcely preserve it. Once virtù civile has decayed in the population, institutional reform cannot reach deep enough to repair it; the chamber's outputs become the inputs of the next generation. Olson's institutional sclerosis stops at the coalitions; Machiavelli stops at the people the coalitions have already shaped.",
+      "Machiavelli reads Polybius into Roman history and arrives at a darker conclusion than his source. Discorsi I.17–18: a corrupt people, even when they obtain liberty, can scarcely preserve it. Once virtù civile has decayed in the population, institutional reform cannot reach deep enough to repair it; the filter's outputs become the inputs of the next generation. Olson's institutional sclerosis stops at the coalitions; Machiavelli stops at the people the coalitions have already shaped.",
     passage:
       "A corrupt people, having come into liberty, can preserve itself free only with the greatest difficulty.",
     source:
@@ -466,14 +466,14 @@ export const LINEAGE: LineageEntry[] = [
     brief:
       "Every man with power is led to abuse it. He proceeds until he finds limits.",
     claim:
-      "Montesquieu is the lineage's pivot from diagnosis to design. XI.4 names the chamber's default — power, unchecked, expands — and the response is architectural: separation of powers, checks and balances, intermediate bodies. The 1748 sentence is short enough to be a slogan and structural enough to motivate the entire constitutional tradition that follows. Without designed limits, the chamber's defaults run; with them, the chamber operates within a finite domain.",
+      "Montesquieu is the lineage's pivot from diagnosis to design. XI.4 names the filter's default — power, unchecked, expands — and the response is architectural: separation of powers, checks and balances, intermediate bodies. The 1748 sentence is short enough to be a slogan and structural enough to motivate the entire constitutional tradition that follows. Without designed limits, the filter's defaults run; with them, the filter operates within a finite domain.",
     passage:
       "C'est une expérience éternelle, que tout homme qui a du pouvoir est porté à en abuser; il va jusqu'à ce qu'il trouve des limites.",
     source:
       "Montesquieu, De l'esprit des lois (Genève 1748), Pléiade ed. Caillois (1949–51); tr. Cohler/Miller/Stone (Cambridge 1989).",
     url: "https://wist.info/montesquieu/83499/",
     honest_caveat:
-      "Montesquieu is not just diagnosing the chamber, he is proposing the architectural response. He is the natural pivot from 'diagnosis' to 'design' — note that the chamber's modern operators inherit the diagnosis but often discard the design.",
+      "Montesquieu is not just diagnosing the filter, he is proposing the architectural response. He is the natural pivot from 'diagnosis' to 'design' — note that the filter's modern operators inherit the diagnosis but often discard the design.",
   },
   {
     id: "bastiat-legal-plunder",
@@ -532,7 +532,7 @@ export const LINEAGE: LineageEntry[] = [
     brief:
       "Soft despotism: a tutelary power that does not tyrannise but covers society in fine rules.",
     claim:
-      "Tocqueville's prediction of democratic despotism is the granular description of the chamber operating. The tutelary power does not tyrannise — it does not need to. It covers the surface of society with a network of small, complicated, minute, and uniform rules; it does not destroy but it prevents existence; it does not break the will but softens, bends, and guides it. Niskanen's budget-maximising bureau and Parkinson's expansion-by-self-replication are both inside this paragraph, 130 years early.",
+      "Tocqueville's prediction of democratic despotism is the granular description of the filter operating. The tutelary power does not tyrannise — it does not need to. It covers the surface of society with a network of small, complicated, minute, and uniform rules; it does not destroy but it prevents existence; it does not break the will but softens, bends, and guides it. Niskanen's budget-maximising bureau and Parkinson's expansion-by-self-replication are both inside this paragraph, 130 years early.",
     passage:
       "It covers the surface of society with a network of small, complicated, minute, and uniform rules through which the most original minds cannot penetrate.",
     source:

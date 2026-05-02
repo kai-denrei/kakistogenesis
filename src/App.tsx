@@ -86,7 +86,7 @@ function ChamberSection() {
   return (
     <section className="col-wide px-5 pt-8 pb-12 md:pt-10 md:pb-16">
       <div className="label-mono mb-3 text-center">
-        § — The Filter Chamber
+        § — The filter
       </div>
       <h2 className="d-lg text-ink-ivory col-text text-center" style={{ marginBottom: "0.9em", maxWidth: "52ch", marginLeft: "auto", marginRight: "auto" }}>
         “Regardless of initial intent of a given bureaucrat, the outcome will turn to sh… negative outcomes”
@@ -388,13 +388,13 @@ const ALTERNATIVES = [
     name: "Negative Maelstrom",
     register: "Atmospheric / essay-title",
     blurb:
-      "Loose, imagistic, essayistic. Names the chamber as weather rather than as machine. Useful as a title for the long-form prose treatment, where the diagram itself is presented as a piece of moral atmosphere — not a parts-list.",
+      "Loose, imagistic, essayistic. Names the filter as weather rather than as machine. Useful as a title for the long-form prose treatment, where the diagram itself is presented as a piece of moral atmosphere — not a parts-list.",
   },
   {
     name: "Kakisto / Pessimum Filter",
     register: "Apparatus",
     blurb:
-      "Names the device, not the process. The chamber as a literal filter — what physically does the work. Useful in technical or systems-analytic register, where the question is what flows in, what flows out, and what the membrane does.",
+      "Names the device, not the process. The filter as a literal filter — what physically does the work. Useful in technical or systems-analytic register, where the question is what flows in, what flows out, and what the membrane does.",
   },
 ];
 
@@ -413,7 +413,7 @@ function AlternativesTab() {
         operator inside the name. Five other names were considered, each doing
         different work in a different register. They are not equals to the
         canonical — the canonical earned the position by being diagnostic
-        about the dark-triad operator who exploits the chamber's asymmetry.
+        about the dark-triad operator who exploits the filter's asymmetry.
         But the alternatives below remain useful for the registers they cover.
       </p>
 
@@ -518,8 +518,8 @@ function AlternativesTab() {
           className="b-md text-ink-paper"
           style={{ maxWidth: "62ch" }}
         >
-          The Filter Chamber is a model of how institutions convert mixed
-          intent into asymmetrically negative output. It is not the chamber
+          The filter is a model of how institutions convert mixed
+          intent into asymmetrically negative output. It is not the filter
           itself. The diagram is a useful diagram. The names — six of them,
           one canonical — are six handles on the same model. None claims the
           territory. The point of plurality, here, is to keep the disclaimer
@@ -551,7 +551,7 @@ function Footer() {
         }}
       >
         Reconstructed from a 2016 hand-sketch: two ink columns flowing into a
-        chamber labeled “mechanisms that render governments inefficient,” a
+        filter labeled “mechanisms that render governments inefficient,” a
         single black plume below, and a marginal note —{" "}
         <span className="text-ink-ivory">2% of psychopaths ruining it</span>.
       </p>
@@ -583,7 +583,7 @@ function TabBar({
   setTab: (t: Tab) => void;
 }) {
   const items: { id: Tab; label: string; n: string }[] = [
-    { id: "chamber", label: "The Chamber", n: "I" },
+    { id: "chamber", label: "The Filter", n: "I" },
     { id: "lineage", label: "Lineage", n: "II" },
     { id: "alternatives", label: "Other Names", n: "III" },
     { id: "origin", label: "Origin (2016)", n: "IV" },

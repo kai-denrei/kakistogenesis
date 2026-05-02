@@ -2,7 +2,7 @@
  * Origin (2016) tab — provenance and exegesis.
  *
  * Displays the user's hand-photographed 2016 sketch with framing copy.
- * The image is the canonical visual reference for the Filter Chamber animation.
+ * The image is the canonical visual reference for the filter animation.
  */
 export default function OriginTab() {
   return (
@@ -41,7 +41,7 @@ export default function OriginTab() {
       >
         <img
           src="/origin-2016.jpeg"
-          alt="2016 hand-sketch original of the Filter Chamber: rainbow ink and dark ink streams falling into a rectangular box labeled 'Mechanisms that render governments inefficient' containing the names No-skin-in-the-game, Loopholes, Greed, Moral Hazard, Bureaucratic waste, Unintended consequences. Below the box, a black ink plume captioned 'Diluted positive outcomes to downright hurtful outcomes', with a marginal note '2% of psychopaths ruining it'."
+          alt="2016 hand-sketch original of the filter: rainbow ink and dark ink streams falling into a rectangular box labeled 'Mechanisms that render governments inefficient' containing the names No-skin-in-the-game, Loopholes, Greed, Moral Hazard, Bureaucratic waste, Unintended consequences. Below the box, a black ink plume captioned 'Diluted positive outcomes to downright hurtful outcomes', with a marginal note '2% of psychopaths ruining it'."
           style={{
             width: "100%",
             height: "auto",
@@ -87,7 +87,7 @@ export default function OriginTab() {
           className="b-md text-ink-paper"
           style={{ marginBottom: "1.2em", maxWidth: "62ch" }}
         >
-          The chamber animation in tab I is built directly against this image.
+          The filter animation in tab I is built directly against this image.
           Particles enter from the rainbow column above, traverse a random-walk
           subset of the mechanism nodes inside the box, lose saturation at each
           contact, and converge into a dark stream below that branches into

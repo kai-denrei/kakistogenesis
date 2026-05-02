@@ -9,10 +9,10 @@ import {
 } from "../data/lineage";
 
 /**
- * Lineage tab — pre-modern history of the chamber.
+ * Lineage tab — pre-modern history of the filter.
  *
  * Working thesis: modern public choice and institutional economics did not
- * *discover* the chamber's mechanisms; they *measured* what Aristotle, Polybius,
+ * *discover* the filter's mechanisms; they *measured* what Aristotle, Polybius,
  * Tacitus, Ibn Khaldūn, La Boétie, Montesquieu, and Bastiat had already diagnosed.
  *
  * Layout: short framing paragraph → entries grouped by tradition → closing
@@ -533,7 +533,7 @@ export default function LineageTab() {
           style={{ marginBottom: "1.2em", maxWidth: "62ch" }}
         >
           Modern public choice and institutional economics did not{" "}
-          <em>discover</em> the chamber's mechanisms. They{" "}
+          <em>discover</em> the filter's mechanisms. They{" "}
           <em>measured</em> what Aristotle, Polybius, Tacitus, Ibn Khaldūn, La
           Boétie, Montesquieu, and Bastiat had already diagnosed — sometimes by
           millennia. The 20th-century contribution is empirical pointing and
@@ -597,7 +597,7 @@ export default function LineageTab() {
           style={{ marginBottom: "1.1em", maxWidth: "62ch" }}
         >
           The lineage above is not a victory lap for the ancients. It is a
-          calibration check: the chamber's mechanisms are old, robust, and have
+          calibration check: the filter's mechanisms are old, robust, and have
           resisted institutional reform across millennia and across
           civilizations. That is the diagnostic weight the synthesis depends on.
         </p>
@@ -619,7 +619,7 @@ export default function LineageTab() {
           style={{ maxWidth: "62ch" }}
         >
           The intuitions were ancient. The numbers are recent. The numbers
-          confirm the intuitions and refuse to let us pretend the chamber is a
+          confirm the intuitions and refuse to let us pretend the filter is a
           contemporary problem in need of a contemporary fix.
         </p>
       </div>

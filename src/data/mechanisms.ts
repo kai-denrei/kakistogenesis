@@ -392,7 +392,7 @@ export const MECHANISMS: Mechanism[] = [
     field: "Industrial psychology",
     category: "exploitation",
     brief:
-      "A small minority with elevated dark-triad traits weaponizes the rest of the chamber.",
+      "A small minority with elevated dark-triad traits weaponizes the rest of the filter.",
     claim:
       "A small minority with elevated dark-triad traits is overrepresented in senior corporate and institutional roles — estimates run roughly 4–20% versus a ~1% population baseline. The mechanisms above are precisely what they exploit; their advantage scales with institutional dysfunction. (Caveat: prevalence estimates are debated, sample-dependent, and methodologically contested.)",
     source:

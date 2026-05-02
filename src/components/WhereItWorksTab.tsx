@@ -8,7 +8,7 @@ import { ExternalLink } from "lucide-react";
  * their commons well — but they are tiny, and the design has not been
  * shown to scale or transfer. The artifact's load-bearing number is
  * 0.015% : 99.985%. Display restraint matches the framing: smaller
- * display type than the chamber, narrower color range, more whitespace.
+ * display type than the filter, narrower color range, more whitespace.
  */
 
 const STRICT_TOTAL = 1_200_000; // ~1.2M — strict Ostrom-validated, named cases
@@ -49,7 +49,7 @@ const APERTURES: {
     pct: "≈ 28%",
     rangeNote: "2 – 2.5 billion",
     methodologyNote:
-      "FAO-style framing: anyone whose subsistence depends on a traditional commons of any kind, including degraded and captured ones across the global south. Most are not Ostrom-functional — they are commons being eaten by the chamber in real time.",
+      "FAO-style framing: anyone whose subsistence depends on a traditional commons of any kind, including degraded and captured ones across the global south. Most are not Ostrom-functional — they are commons being eaten by the filter in real time.",
   },
 ];
 
@@ -482,11 +482,11 @@ export default function WhereItWorksTab() {
           className="b-md text-ink-paper"
           style={{ marginBottom: "1em", maxWidth: "60ch" }}
         >
-          This tab is not a counterpoint to the chamber. It is an
+          This tab is not a counterpoint to the filter. It is an
           <em> existence proof </em>
-          that the chamber can be beaten — by communities willing to do the
+          that the filter can be beaten — by communities willing to do the
           work, at small scale, with rules of their own. It says nothing about
-          whether the chamber{" "}
+          whether the filter{" "}
           <em>usually</em> is beaten. It says nothing about whether the design
           transfers up.
         </p>
@@ -514,7 +514,7 @@ export default function WhereItWorksTab() {
           The widest aperture (≈ 2 – 2.5 billion) is people whose subsistence
           touches a traditional commons of <em>any</em> kind. Most of those
           commons are not Ostrom-functional — they are commons being eaten by
-          the chamber in real time. The strictly-functioning cases remain tiny.
+          the filter in real time. The strictly-functioning cases remain tiny.
         </p>
       </div>
 
@@ -568,10 +568,10 @@ export default function WhereItWorksTab() {
           style={{ marginBottom: "1em", maxWidth: "60ch" }}
         >
           The artifact's framing inverts the empirical weight if the Ostrom
-          material gets equal billing with the chamber. The honest ratio is
+          material gets equal billing with the filter. The honest ratio is
           closer to <span className="text-ink-ivory">0.015% : 99.985%</span> —
           her case studies are not a counterpoint, they are an{" "}
-          <em>existence proof at toy scale</em>. They show the chamber can be
+          <em>existence proof at toy scale</em>. They show the filter can be
           beaten by communities willing to do the work. They show nothing about
           whether it usually is, or whether the design transfers up.
         </p>
@@ -591,7 +591,7 @@ export default function WhereItWorksTab() {
           className="b-md text-ink-paper"
           style={{ maxWidth: "60ch" }}
         >
-          What Ostrom shows is that the chamber's defaults are not laws of
+          What Ostrom shows is that the filter's defaults are not laws of
           physics — there are local exits. What she does not show, and could
           not have shown, is that the exits scale. That problem is open.
         </p>

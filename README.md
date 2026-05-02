@@ -16,7 +16,7 @@ Read together: *the iron rule of the worst-demon*.
 
 ## What's in the box
 
-The chamber catalogues twenty-two academically-rooted institutional mechanisms across six families:
+The filter catalogues twenty-two academically-rooted institutional mechanisms across six families:
 
 - **Self-preservation** — institutions acquire interests of their own
 - **Capture & rent** — the regulated buy the regulator
@@ -31,7 +31,7 @@ Each mechanism is animated, hover-described, and fully cited.
 
 - Vite 7 + React 19 + TypeScript
 - Tailwind CSS 3
-- framer-motion for the chamber animation
+- framer-motion for the filter animation
 - vite-plugin-pwa for offline / installable
 
 ## Local development
@@ -53,7 +53,7 @@ Pushed to `main` → GitHub Actions builds and deploys to GitHub Pages at
 
 ## Origin
 
-The artifact began as a hand-photographed sketch (2016, see `public/origin-2016.jpeg` and the *Origin* tab in the app). Two ink columns — vibrant rainbow for good intentions, drifting black for bad — fall into a chamber labeled with the mechanisms that render governments inefficient. A single dark plume exits below.
+The artifact began as a hand-photographed sketch (2016, see `public/origin-2016.jpeg` and the *Origin* tab in the app). Two ink columns — vibrant rainbow for good intentions, drifting black for bad — fall into a filter labeled with the mechanisms that render governments inefficient. A single dark plume exits below.
 
 The *current* build is the 2026 reading of that 2016 page.
 
