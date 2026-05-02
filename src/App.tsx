@@ -9,8 +9,15 @@ import {
 } from "./data/mechanisms";
 import FilterChamber from "./components/FilterChamber";
 import OriginTab from "./components/OriginTab";
+import LineageTab from "./components/LineageTab";
+import WhereItWorksTab from "./components/WhereItWorksTab";
 
-type Tab = "chamber" | "alternatives" | "origin";
+type Tab =
+  | "chamber"
+  | "lineage"
+  | "alternatives"
+  | "origin"
+  | "where-it-works";
 
 function Hero() {
   return (
@@ -577,8 +584,10 @@ function TabBar({
 }) {
   const items: { id: Tab; label: string; n: string }[] = [
     { id: "chamber", label: "The Chamber", n: "I" },
-    { id: "alternatives", label: "Other Names", n: "II" },
-    { id: "origin", label: "Origin (2016)", n: "III" },
+    { id: "lineage", label: "Lineage", n: "II" },
+    { id: "alternatives", label: "Other Names", n: "III" },
+    { id: "origin", label: "Origin (2016)", n: "IV" },
+    { id: "where-it-works", label: "Where it Works", n: "V" },
   ];
   return (
     <nav
@@ -663,6 +672,18 @@ export default function App() {
             <Footer />
           </motion.main>
         )}
+        {tab === "lineage" && (
+          <motion.main
+            key="lineage"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.35, ease: "easeOut" }}
+          >
+            <LineageTab />
+            <Footer />
+          </motion.main>
+        )}
         {tab === "alternatives" && (
           <motion.main
             key="alternatives"
@@ -684,6 +705,18 @@ export default function App() {
             transition={{ duration: 0.35, ease: "easeOut" }}
           >
             <OriginTab />
+            <Footer />
+          </motion.main>
+        )}
+        {tab === "where-it-works" && (
+          <motion.main
+            key="where-it-works"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.35, ease: "easeOut" }}
+          >
+            <WhereItWorksTab />
             <Footer />
           </motion.main>
         )}
