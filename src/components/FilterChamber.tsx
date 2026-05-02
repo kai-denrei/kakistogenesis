@@ -434,13 +434,13 @@ function MechanismNode({
       {/* label below */}
       <text
         x={node.cx}
-        y={node.cy + 18}
+        y={node.cy + 20}
         textAnchor="middle"
         fontFamily="'EB Garamond', ui-serif, Georgia, serif"
         fontStyle="italic"
-        fontSize="11.5"
-        fill="#d8cfb8"
-        opacity={0.88}
+        fontSize="14"
+        fill="#ece4d0"
+        opacity={0.95}
         style={{ pointerEvents: "none" }}
       >
         {node.m.name}
@@ -589,13 +589,13 @@ function CostNodeGlyph({
       {/* italic label below */}
       <text
         x={cn.cx}
-        y={cn.cy + 22}
+        y={cn.cy + 24}
         textAnchor="middle"
         fontFamily="'EB Garamond', ui-serif, Georgia, serif"
         fontStyle="italic"
-        fontSize="11.5"
-        fill="#d8cfb8"
-        opacity={0.9}
+        fontSize="14"
+        fill="#ece4d0"
+        opacity={0.95}
         style={{ pointerEvents: "none" }}
       >
         {cn.display}
@@ -637,13 +637,13 @@ function DieFrame({
       {/* mono header above the die */}
       <text
         x={cx}
-        y={cy - half - 14}
+        y={cy - half - 16}
         textAnchor="middle"
         fontFamily="'JetBrains Mono', ui-monospace, monospace"
-        fontSize="9.5"
+        fontSize="11"
         letterSpacing="0.22em"
-        fill="#a89e8a"
-        opacity={0.8}
+        fill="#d8cfb8"
+        opacity={0.85}
       >
         {header}
       </text>
@@ -702,10 +702,10 @@ function FlankPlume({
         y={cy + 102}
         textAnchor="middle"
         fontFamily="'JetBrains Mono', ui-monospace, monospace"
-        fontSize="12"
+        fontSize="13"
         fontWeight="500"
         letterSpacing="0.28em"
-        fill="#d8cfb8"
+        fill="#ece4d0"
       >
         {label}
       </text>
@@ -859,8 +859,8 @@ export function FilterChamber() {
         <g
           fontFamily="'EB Garamond', ui-serif, Georgia, serif"
           fontStyle="italic"
-          fontSize="14"
-          fill="#d8cfb8"
+          fontSize="15.5"
+          fill="#ece4d0"
         >
           <text x={GOOD_ENTRY.x - 110} y={70} textAnchor="end">
             Good intentions
@@ -948,19 +948,19 @@ export function FilterChamber() {
         <g
           fontFamily="'EB Garamond', ui-serif, Georgia, serif"
           fontStyle="italic"
-          fontSize="12.5"
-          fill="#a89e8a"
+          fontSize="14.5"
+          fill="#d8cfb8"
         >
-          <text x={BOX.x - 14} y={BOX.y + 30} textAnchor="end">
+          <text x={BOX.x - 14} y={BOX.y + 28} textAnchor="end">
             Mechanisms
           </text>
-          <text x={BOX.x - 14} y={BOX.y + 46} textAnchor="end">
+          <text x={BOX.x - 14} y={BOX.y + 47} textAnchor="end">
             That render
           </text>
-          <text x={BOX.x - 14} y={BOX.y + 62} textAnchor="end">
+          <text x={BOX.x - 14} y={BOX.y + 66} textAnchor="end">
             governments
           </text>
-          <text x={BOX.x - 14} y={BOX.y + 78} textAnchor="end">
+          <text x={BOX.x - 14} y={BOX.y + 85} textAnchor="end">
             inefficient
           </text>
         </g>
@@ -1000,13 +1000,13 @@ export function FilterChamber() {
               {/* category label */}
               <text
                 x={px + PANEL_W / 2}
-                y={py + 22}
+                y={py + 24}
                 textAnchor="middle"
                 fontFamily="'JetBrains Mono', ui-monospace, monospace"
-                fontSize="9.5"
+                fontSize="11"
                 letterSpacing="0.22em"
                 fill={cat.color}
-                opacity={0.88}
+                opacity={0.92}
               >
                 {cat.label.toUpperCase()}
               </text>
@@ -1123,10 +1123,10 @@ export function FilterChamber() {
         <g
           fontFamily="'EB Garamond', ui-serif, Georgia, serif"
           fontStyle="italic"
-          fontSize="13"
-          fill="#a89e8a"
+          fontSize="15"
+          fill="#d8cfb8"
         >
-          <text x={BOX.x + 12} y={VIEW_H - 26}>
+          <text x={BOX.x + 12} y={VIEW_H - 30}>
             Diluted positive outcomes
           </text>
           <text x={BOX.x + 38} y={VIEW_H - 12}>
@@ -1136,8 +1136,9 @@ export function FilterChamber() {
             x={VIEW_W - 14}
             y={VIEW_H - 12}
             textAnchor="end"
+            fontSize="14"
             fontStyle="italic"
-            fill="#7a7367"
+            fill="#a89e8a"
           >
             2% of psychopaths ruining it
           </text>
