@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <rect width="192" height="192" fill="#0c0b0a"/>
+  <defs>
+    <radialGradient id="g" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0%" stop-color="#000" stop-opacity="1"/>
+      <stop offset="60%" stop-color="#000" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <circle cx="96" cy="96" r="64" fill="none" stroke="#3a362e" stroke-width="0.6" stroke-dasharray="1 5"/>
+  <circle cx="96" cy="96" r="48" fill="none" stroke="#3a362e" stroke-width="0.5" stroke-dasharray="2 6" opacity="0.6"/>
+  <circle cx="96" cy="96" r="32" fill="url(#g)"/>
+  <text x="96" y="106" text-anchor="middle" font-family="serif" font-size="40" font-weight="500" fill="#b04a4a">魔</text>
+</svg>

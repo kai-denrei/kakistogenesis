@@ -1,0 +1,199 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+  --bg: #1c1916;
+  --surface: #23201c;
+  --surface-2: #2a2620;
+  --border-soft: #26241f;
+  --border-mid: #3a362e;
+  --ivory: #ece4d0;
+  --paper: #d8cfb8;
+  --mute: #a89e8a;
+  --dim: #7a7367;
+  --faint: #5a554a;
+  --amber: #d4a463;
+  --oxblood: #b04a4a;
+  --teal: #7aada0;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--ivory);
+  min-height: 100vh;
+}
+
+body {
+  font-family: "EB Garamond", ui-serif, Georgia, serif;
+  font-size: 19px;
+  line-height: 1.55;
+  letter-spacing: 0.005em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-synthesis: none;
+  font-feature-settings: "kern", "liga", "onum";
+}
+
+::selection {
+  background: rgba(212, 164, 99, 0.28);
+  color: var(--ivory);
+}
+
+/* paper grain — barely there */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.5 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+}
+
+#root > * {
+  position: relative;
+  z-index: 2;
+}
+
+a {
+  color: var(--paper);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(122, 173, 160, 0.4);
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+a:hover {
+  color: var(--ivory);
+  border-bottom-color: var(--teal);
+}
+
+button {
+  font-family: inherit;
+}
+
+/* shared display / mono utilities */
+.font-display {
+  font-family: "Fraunces", ui-serif, Georgia, serif;
+  font-feature-settings: "ss01", "ss02", "kern";
+  letter-spacing: -0.012em;
+}
+.font-jp {
+  font-family: "Noto Serif JP", "Fraunces", ui-serif, serif;
+  font-feature-settings: "palt";
+}
+.font-mono {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-feature-settings: "zero", "ss01";
+}
+
+.label-mono {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+.label-mono-sm {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+/* Display sizes — book hierarchy */
+.d-hero {
+  font-family: "Noto Serif JP", "Fraunces", ui-serif, serif;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-size: clamp(3.4rem, 11vw, 7.5rem);
+}
+.d-xl {
+  font-family: "Fraunces", ui-serif, serif;
+  font-weight: 300;
+  line-height: 0.96;
+  letter-spacing: -0.018em;
+  font-size: clamp(2.4rem, 6vw, 3.8rem);
+}
+.d-lg {
+  font-family: "Fraunces", ui-serif, serif;
+  font-weight: 350;
+  line-height: 1.05;
+  letter-spacing: -0.012em;
+  font-size: clamp(1.8rem, 3.8vw, 2.4rem);
+}
+.d-md {
+  font-family: "Fraunces", ui-serif, serif;
+  font-weight: 500;
+  line-height: 1.12;
+  letter-spacing: -0.005em;
+  font-size: clamp(1.35rem, 2.4vw, 1.55rem);
+}
+
+/* body sizes */
+.b-sm {
+  font-size: 15.5px;
+  line-height: 1.55;
+}
+.b-md {
+  font-size: 18px;
+  line-height: 1.6;
+}
+.b-lg {
+  font-size: 19.5px;
+  line-height: 1.65;
+}
+.b-xl {
+  font-size: 22px;
+  line-height: 1.5;
+}
+
+/* layout */
+.col-text {
+  max-width: 64ch;
+  margin-left: auto;
+  margin-right: auto;
+}
+.col-wide {
+  max-width: 1100px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.col-mid {
+  max-width: 880px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* hairline rule */
+.rule {
+  border: 0;
+  border-top: 1px solid var(--border-soft);
+  margin: 0;
+}
+
+/* tiny dot */
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+/* scroll behavior */
+html {
+  scroll-behavior: smooth;
+}
+
+/* prevent layout shifts in animation containers */
+.chamber-wrap {
+  contain: layout paint;
+}

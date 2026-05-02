@@ -1,0 +1,7 @@
+# Session Log
+
+2026-05-02 — INIT — mode: solo, roles: dev, arch, pm, ux
+2026-05-02 — SYNC — Captured names taxonomy (six-register stack) and animation direction (rainbow particles desaturating in maelstrom). Surfaced tonal-coherence, audience, and title-path-dependence as cross-role open questions.
+2026-05-02 — SYNC — User pushed back on all three concerns. Resolved: (1) elegance IS the metaphor, contrast is load-bearing; (2) plurality is the feature, no canonical name, ペシ魔鉄則 is author's personal preference but not elevated; (3) Names becomes a separate tab framed as meta-model exposition (map/territory, all-models-wrong). Tab-UI architecture and audience-criticality-under-plurality added as new open questions.
+2026-05-02 — SYNC — Plurality REVERSED. ペシ魔鉄則 promoted to canonical name (ADHD-friendly, single mnemonic). Other five become alternatives in a discussion tab. Blank-slate V1 build authorized: Vite + React + Tailwind + framer-motion + vite-plugin-pwa. PoC jsx kept as reference. PM agent dispatched with executive authority and no-stop-until-V1 mandate.
+2026-05-02 — SYNC — V1 reviewed against 2016 original photo. Vortex/maelstrom framing REVERSED (recorded in ux.md Dead Ends) — was rhetorical overshoot from "filter chamber." V1.1 dispatched: 2016-Original tab, brighter rainbow input, spatial mechanism map with hover tooltips, particle random-walk through mechanisms, rectangular chamber, dark-stream-with-estuaries output. Image saved to public/origin-2016.jpeg.
