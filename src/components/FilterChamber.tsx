@@ -36,14 +36,14 @@ import { useIsNarrow } from "../hooks/useIsNarrow";
 
 /* ---------- viewport ---------- */
 const VIEW_W = 1100;
-const VIEW_H = 1020;
+const VIEW_H = 1100;
 
 /* ---------- chamber rectangle (the "box" from the 2016 sketch) ---------- */
 const BOX = {
   x: 80,
   y: 200,
   w: 940,
-  h: 420,
+  h: 490,
 } as const;
 const COLS = 3;
 const ROWS = 2;
@@ -216,7 +216,7 @@ function buildNodes(): Node[] {
       const baseX = panelX + padX + slotW * localCol + slotW / 2;
       const baseY = panelY + padY + slotH * localRow + slotH / 2;
       const jx = (rand() - 0.5) * slotW * 0.32;
-      const jy = (rand() - 0.5) * slotH * 0.30;
+      const jy = (rand() - 0.5) * slotH * 0.18;
       nodes.push({
         m,
         cx: Math.round(baseX + jx),
@@ -386,6 +386,76 @@ function fadeToShadow(hex: string, amount: number): string {
   return `rgb(${m(r, tr)}, ${m(g, tg)}, ${m(b, tb)})`;
 }
 
+/* ---------- two-line label splitter ---------- */
+/**
+ * Split a node label into 1 or 2 lines for SVG rendering.
+ * Rules:
+ *   - 1 word         → 1 line (treat hyphenated as one word).
+ *   - 2 words        → each word on its own line.
+ *   - 3+ words       → balance characters across the two lines, pivoting at a
+ *                      natural word boundary.
+ * Special cases (hand-tuned for visual balance) live in OVERRIDES.
+ */
+const SPLIT_OVERRIDES: Record<string, [string, string]> = {
+  // mechanisms
+  "Iron Law of Oligarchy": ["Iron Law of", "Oligarchy"],
+  "Iron Law of Bureaucracy": ["Iron Law of", "Bureaucracy"],
+  "Budget-Maximizing Bureaucrat": ["Budget-Maximizing", "Bureaucrat"],
+  "Shirky Principle": ["Shirky", "Principle"],
+  "Conquest's Third Law": ["Conquest's Third", "Law"],
+  "Logic of Collective Action": ["Logic of Collective", "Action"],
+  "Regulatory Capture": ["Regulatory", "Capture"],
+  "Bootleggers and Baptists": ["Bootleggers and", "Baptists"],
+  "Tullock's Paradox": ["Tullock's", "Paradox"],
+  "Institutional Sclerosis": ["Institutional", "Sclerosis"],
+  "Moral Hazard": ["Moral", "Hazard"],
+  "Principal–Agent / Skin in the Game": ["Principal–Agent", "(Skin in the Game)"],
+  "Peter Principle": ["Peter", "Principle"],
+  "Unanticipated Consequences": ["Unanticipated", "Consequences"],
+  "Knowledge Problem": ["Knowledge", "Problem"],
+  "Goodhart's Law": ["Goodhart's", "Law"],
+  "Campbell's Law": ["Campbell's", "Law"],
+  "Parkinson's Law": ["Parkinson's", "Law"],
+  "Law of Triviality (Bikeshedding)": ["Law of Triviality", "(Bikeshedding)"],
+  "Trained Incapacity": ["Trained", "Incapacity"],
+  "The Asymmetric Exploiter": ["The Asymmetric", "Exploiter"],
+  // costs (display labels)
+  "Innovation Foreclosure": ["Innovation", "Foreclosure"],
+  "Consumed Effort": ["Consumed", "Effort"],
+  "Human Capital Exodus": ["Human Capital", "Exodus"],
+  "Moral Conditioning": ["Moral", "Conditioning"],
+  "Legitimacy Depletion": ["Legitimacy", "Depletion"],
+  "Problem Latency": ["Problem", "Latency"],
+  "Lost Correction": ["Lost", "Correction"],
+  "Epistemic Capture": ["Epistemic", "Capture"],
+};
+
+function splitLabel(name: string): [string] | [string, string] {
+  const override = SPLIT_OVERRIDES[name];
+  if (override) return override;
+  const words = name.split(/\s+/);
+  if (words.length <= 1) return [name];
+  if (words.length === 2) return [words[0], words[1]] as [string, string];
+  // 3+ words without an override: pivot for balanced character count
+  let bestPivot = 1;
+  let bestDiff = Infinity;
+  for (let p = 1; p < words.length; p++) {
+    const a = words.slice(0, p).join(" ");
+    const b = words.slice(p).join(" ");
+    const diff = Math.abs(a.length - b.length);
+    // prefer shorter-or-equal first line (mild bias)
+    const bias = a.length <= b.length ? 0 : 1;
+    const score = diff + bias;
+    if (score < bestDiff) {
+      bestDiff = score;
+      bestPivot = p;
+    }
+  }
+  const a = words.slice(0, bestPivot).join(" ");
+  const b = words.slice(bestPivot).join(" ");
+  return [a, b];
+}
+
 /* ---------- mechanism node component ---------- */
 
 function MechanismNode({
@@ -431,20 +501,30 @@ function MechanismNode({
         fill={node.color}
         opacity={0.95}
       />
-      {/* label below */}
-      <text
-        x={node.cx}
-        y={node.cy + 20}
-        textAnchor="middle"
-        fontFamily="'EB Garamond', ui-serif, Georgia, serif"
-        fontStyle="italic"
-        fontSize="14"
-        fill="#ece4d0"
-        opacity={0.95}
-        style={{ pointerEvents: "none" }}
-      >
-        {node.m.name}
-      </text>
+      {/* label below — two-line split for legibility */}
+      {(() => {
+        const lines = splitLabel(node.m.name);
+        return (
+          <text
+            x={node.cx}
+            y={node.cy + 22}
+            textAnchor="middle"
+            fontFamily="'EB Garamond', ui-serif, Georgia, serif"
+            fontStyle="italic"
+            fontSize="17"
+            fill="#ece4d0"
+            opacity={0.95}
+            style={{ pointerEvents: "none" }}
+          >
+            <tspan x={node.cx}>{lines[0]}</tspan>
+            {lines[1] !== undefined && (
+              <tspan x={node.cx} dy={18}>
+                {lines[1]}
+              </tspan>
+            )}
+          </text>
+        );
+      })()}
     </g>
   );
 }
@@ -586,20 +666,30 @@ function CostNodeGlyph({
       <circle cx={cn.cx} cy={cn.cy} r={8} fill={color} opacity={0.18} />
       {/* core dot */}
       <circle cx={cn.cx} cy={cn.cy} r={4.2} fill={color} opacity={0.95} />
-      {/* italic label below */}
-      <text
-        x={cn.cx}
-        y={cn.cy + 24}
-        textAnchor="middle"
-        fontFamily="'EB Garamond', ui-serif, Georgia, serif"
-        fontStyle="italic"
-        fontSize="14"
-        fill="#ece4d0"
-        opacity={0.95}
-        style={{ pointerEvents: "none" }}
-      >
-        {cn.display}
-      </text>
+      {/* italic label below — two-line split for legibility */}
+      {(() => {
+        const lines = splitLabel(cn.display);
+        return (
+          <text
+            x={cn.cx}
+            y={cn.cy + 24}
+            textAnchor="middle"
+            fontFamily="'EB Garamond', ui-serif, Georgia, serif"
+            fontStyle="italic"
+            fontSize="17"
+            fill="#ece4d0"
+            opacity={0.95}
+            style={{ pointerEvents: "none" }}
+          >
+            <tspan x={cn.cx}>{lines[0]}</tspan>
+            {lines[1] !== undefined && (
+              <tspan x={cn.cx} dy={18}>
+                {lines[1]}
+              </tspan>
+            )}
+          </text>
+        );
+      })()}
     </g>
   );
 }
