@@ -7,10 +7,12 @@ import {
   MECHANISMS,
   type CategoryKey,
 } from "./data/mechanisms";
+import { MECHANISM_TO_LOSSES } from "./data/losses";
 import FilterChamber from "./components/FilterChamber";
 import OriginTab from "./components/OriginTab";
 import LineageTab from "./components/LineageTab";
 import WhereItWorksTab from "./components/WhereItWorksTab";
+import WhatIsLostSection from "./components/WhatIsLostSection";
 
 type Tab =
   | "chamber"
@@ -206,6 +208,7 @@ function MechanismCard({
       style={{
         borderLeft: `2px solid ${cat.color}`,
         padding: "26px 18px 26px 26px",
+        scrollMarginTop: 80,
       }}
     >
       <div className="flex flex-wrap gap-6 items-baseline">
@@ -298,6 +301,45 @@ function MechanismCard({
             >
               Reference <ExternalLink size={11} />
             </a>
+          )}
+          {(MECHANISM_TO_LOSSES[m.id] ?? []).length > 0 && (
+            <div
+              className="font-mono"
+              style={{
+                fontSize: 10.5,
+                lineHeight: 1.55,
+                color: "var(--mute)",
+                marginTop: 12,
+                maxWidth: "70ch",
+                letterSpacing: "0.04em",
+              }}
+            >
+              <span
+                style={{
+                  textTransform: "uppercase",
+                  letterSpacing: "0.16em",
+                  color: "var(--dim)",
+                  marginRight: 8,
+                }}
+              >
+                Produces
+              </span>
+              {(MECHANISM_TO_LOSSES[m.id] ?? []).map((l, idx, arr) => (
+                <span key={l.id}>
+                  <a
+                    href={`#l-${l.id}`}
+                    style={{
+                      color: "var(--paper)",
+                      textDecoration: "none",
+                      borderBottom: "1px dotted var(--border-mid)",
+                    }}
+                  >
+                    {l.name}
+                  </a>
+                  {idx < arr.length - 1 ? ", " : ""}
+                </span>
+              ))}
+            </div>
           )}
           <div
             className="font-mono"
@@ -687,6 +729,7 @@ export default function App() {
             <ChamberSection />
             <Hero />
             <MechanismsCatalogue />
+            <WhatIsLostSection />
             <Footer />
           </motion.main>
         )}

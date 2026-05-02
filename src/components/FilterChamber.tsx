@@ -8,25 +8,35 @@ import {
   type CategoryKey,
   type Mechanism,
 } from "../data/mechanisms";
+import {
+  LOSSES,
+  LOSS_CATEGORIES,
+  type Loss,
+} from "../data/losses";
 import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
 import { usePrefersReducedMotion } from "../hooks/usePrefersReducedMotion";
 import { useIsNarrow } from "../hooks/useIsNarrow";
 
 /**
- * Filter Chamber — V1.1.
+ * Filter Chamber — V1.4 (cost-field surgery).
  *
  * Honors the 2016 origin sketch:
  *   • Rectangular chamber containing the 22 mechanisms spatially mapped (3x2 category panels).
  *   • Bright rainbow "good intentions" stream enters from above.
  *   • Dark "bad intentions" cloud enters from upper right.
  *   • Particles random-walk through 3–7 mechanism nodes, losing saturation per visit (0.6x — grey by visit 3).
- *   • Below the chamber, particles converge into a dark stream branching into 3 estuary mouths
- *     (diluted-positive → downright-hurtful), routed by final saturation.
+ *
+ * Cost field (replaces the V1.1 three-estuary system):
+ *   • Below the chamber, particles route into ten cost nodes laid out as two dice
+ *     (Die A: Material & Human · Die B: Social & Epistemic — center + 4 corners each).
+ *   • Routing weight = Σ overlap(particle.visited_mechanism_ids, loss.produced_by).
+ *   • Extreme-saturation flanks: finalSat > 0.6 → DILUTED plume (warm-tinted, far left);
+ *                                finalSat < 0.04 → HURTFUL plume (dark red, far right).
  */
 
 /* ---------- viewport ---------- */
 const VIEW_W = 1100;
-const VIEW_H = 880;
+const VIEW_H = 1020;
 
 /* ---------- chamber rectangle (the "box" from the 2016 sketch) ---------- */
 const BOX = {
@@ -55,12 +65,102 @@ const RAINBOW = [
   "#7a4cff", // violet
 ];
 
-/* ---------- estuaries (3 outlets) ---------- */
-const ESTUARIES = [
-  { x: BOX.x + BOX.w * 0.28, y: VIEW_H - 60, label: "DILUTED" },
-  { x: BOX.x + BOX.w * 0.50, y: VIEW_H - 60, label: "DIMINISHED" },
-  { x: BOX.x + BOX.w * 0.72, y: VIEW_H - 60, label: "HURTFUL" },
-];
+/* ---------- cost field (two dice + extreme-saturation flanks) ---------- */
+/**
+ * Layout: two die-5 grids side by side, centered under the chamber.
+ *  - Die A (left)  — Material & Human, center: misallocation, 4 corners: innovation-foreclosure, consumed-effort, human-capital-exodus, moral-conditioning
+ *  - Die B (right) — Social & Epistemic, center: coordination-tax, 4 corners: legitimacy-depletion, problem-latency, lost-correction, epistemic-capture
+ *
+ * Flanks:
+ *  - DILUTED plume on the far left  (warm amber, finalSat > 0.6)
+ *  - HURTFUL plume on the far right (dark red,   finalSat < 0.04)
+ */
+const FIELD_TOP = BOX.y + BOX.h + 80; // 700
+const DIE_GAP = 56; // gutter between dice
+const DIE_SIZE = 200; // square footprint per die
+const FIELD_CENTER_X = BOX.x + BOX.w / 2; // 550
+const DIE_A_CX = FIELD_CENTER_X - DIE_GAP / 2 - DIE_SIZE / 2; // ~422
+const DIE_B_CX = FIELD_CENTER_X + DIE_GAP / 2 + DIE_SIZE / 2; // ~678
+const DIE_CY = FIELD_TOP + DIE_SIZE / 2; // 800
+
+/** Per-die: center point + 4 corners offset by ±DIE_INSET on each axis. */
+const DIE_INSET = 64;
+
+type CostNode = {
+  id: string;
+  loss: Loss;
+  cx: number;
+  cy: number;
+  /** Display label override (used for "Trust" override on coordination-tax). */
+  display: string;
+};
+
+/**
+ * Build the ten cost-node positions.
+ * - "wide": full 5-pip die (center + 4 corners), two dice side-by-side.
+ * - "narrow": same two dice, but each die collapses to a 2x2 grid (drop the
+ *   center pip into the second column of the bottom row — the visual still
+ *   reads as a die, just simpler).
+ */
+function buildCostNodes(mode: "wide" | "narrow" = "wide"): {
+  dieA: CostNode[];
+  dieB: CostNode[];
+} {
+  const byId: Record<string, Loss> = Object.fromEntries(
+    LOSSES.map((l) => [l.id, l]),
+  );
+
+  if (mode === "narrow") {
+    // 2x2 grid per die, narrower spacing
+    const inset = 50;
+    const a: CostNode[] = [
+      { id: "innovation-foreclosure", loss: byId["innovation-foreclosure"], cx: DIE_A_CX - inset, cy: DIE_CY - inset, display: "Innovation Foreclosure" },
+      { id: "consumed-effort", loss: byId["consumed-effort"], cx: DIE_A_CX + inset, cy: DIE_CY - inset, display: "Consumed Effort" },
+      { id: "human-capital-exodus", loss: byId["human-capital-exodus"], cx: DIE_A_CX - inset, cy: DIE_CY + inset, display: "Human Capital Exodus" },
+      { id: "moral-conditioning", loss: byId["moral-conditioning"], cx: DIE_A_CX + inset, cy: DIE_CY + inset, display: "Moral Conditioning" },
+      // misallocation (the would-be-center) tucked just below the 2x2 grid
+      { id: "misallocation", loss: byId["misallocation"], cx: DIE_A_CX, cy: DIE_CY + inset * 2 + 4, display: "Misallocation" },
+    ];
+    const b: CostNode[] = [
+      { id: "legitimacy-depletion", loss: byId["legitimacy-depletion"], cx: DIE_B_CX - inset, cy: DIE_CY - inset, display: "Legitimacy Depletion" },
+      { id: "problem-latency", loss: byId["problem-latency"], cx: DIE_B_CX + inset, cy: DIE_CY - inset, display: "Problem Latency" },
+      { id: "lost-correction", loss: byId["lost-correction"], cx: DIE_B_CX - inset, cy: DIE_CY + inset, display: "Lost Correction" },
+      { id: "epistemic-capture", loss: byId["epistemic-capture"], cx: DIE_B_CX + inset, cy: DIE_CY + inset, display: "Epistemic Capture" },
+      { id: "coordination-tax", loss: byId["coordination-tax"], cx: DIE_B_CX, cy: DIE_CY + inset * 2 + 4, display: "Trust" },
+    ];
+    return { dieA: a, dieB: b };
+  }
+
+  // Wide / default: full 5-pip die.
+  const a: CostNode[] = [
+    { id: "misallocation", loss: byId["misallocation"], cx: DIE_A_CX, cy: DIE_CY, display: "Misallocation" },
+    { id: "innovation-foreclosure", loss: byId["innovation-foreclosure"], cx: DIE_A_CX - DIE_INSET, cy: DIE_CY - DIE_INSET, display: "Innovation Foreclosure" },
+    { id: "consumed-effort", loss: byId["consumed-effort"], cx: DIE_A_CX + DIE_INSET, cy: DIE_CY - DIE_INSET, display: "Consumed Effort" },
+    { id: "human-capital-exodus", loss: byId["human-capital-exodus"], cx: DIE_A_CX - DIE_INSET, cy: DIE_CY + DIE_INSET, display: "Human Capital Exodus" },
+    { id: "moral-conditioning", loss: byId["moral-conditioning"], cx: DIE_A_CX + DIE_INSET, cy: DIE_CY + DIE_INSET, display: "Moral Conditioning" },
+  ];
+  const b: CostNode[] = [
+    { id: "coordination-tax", loss: byId["coordination-tax"], cx: DIE_B_CX, cy: DIE_CY, display: "Trust" },
+    { id: "legitimacy-depletion", loss: byId["legitimacy-depletion"], cx: DIE_B_CX - DIE_INSET, cy: DIE_CY - DIE_INSET, display: "Legitimacy Depletion" },
+    { id: "problem-latency", loss: byId["problem-latency"], cx: DIE_B_CX + DIE_INSET, cy: DIE_CY - DIE_INSET, display: "Problem Latency" },
+    { id: "lost-correction", loss: byId["lost-correction"], cx: DIE_B_CX - DIE_INSET, cy: DIE_CY + DIE_INSET, display: "Lost Correction" },
+    { id: "epistemic-capture", loss: byId["epistemic-capture"], cx: DIE_B_CX + DIE_INSET, cy: DIE_CY + DIE_INSET, display: "Epistemic Capture" },
+  ];
+  return { dieA: a, dieB: b };
+}
+
+const FLANK_DILUTED = {
+  cx: BOX.x + 60,
+  cy: DIE_CY,
+  color: "#c9a070",
+  label: "DILUTED",
+};
+const FLANK_HURTFUL = {
+  cx: BOX.x + BOX.w - 60,
+  cy: DIE_CY,
+  color: "#8a1f1f",
+  label: "HURTFUL",
+};
 
 /* ---------- node layout: position each mechanism inside its category panel ---------- */
 type Node = {
@@ -130,6 +230,11 @@ function buildNodes(): Node[] {
 
 /* ---------- particle path planner ---------- */
 
+type ParticleDestination =
+  | { kind: "diluted" }
+  | { kind: "hurtful" }
+  | { kind: "cost"; node: CostNode };
+
 type ParticlePlan = {
   id: number;
   /** sequence of waypoints: [entry, n1, n2, ..., exit] */
@@ -142,13 +247,18 @@ type ParticlePlan = {
   duration: number;
   delay: number;
   size: number;
-  /** chosen estuary index */
-  estuary: number;
+  /** chosen destination */
+  destination: ParticleDestination;
   /** final saturation, used to assign color of the rendered exit dot */
   finalSat: number;
 };
 
-function planParticles(seed: number, nodes: Node[], count: number): ParticlePlan[] {
+function planParticles(
+  seed: number,
+  nodes: Node[],
+  count: number,
+  costNodes: CostNode[],
+): ParticlePlan[] {
   let s = seed;
   const rand = () => {
     s = (s * 9301 + 49297) % 233280;
@@ -167,16 +277,16 @@ function planParticles(seed: number, nodes: Node[], count: number): ParticlePlan
     }
     // sort visits roughly top-to-bottom so motion looks like flow
     picked.sort((a, b) => a.cy - b.cy + (rand() - 0.5) * 80);
+    const visitedIds = picked.map((n) => n.m.id);
 
-    // build waypoints
+    // build waypoints (chamber traversal)
     const wp: { x: number; y: number }[] = [];
     wp.push({ x: GOOD_ENTRY.x + (rand() - 0.5) * 80, y: GOOD_ENTRY.y - 40 });
     for (const n of picked) {
-      // small jitter so dots don't all stack on the node center
       wp.push({ x: n.cx + (rand() - 0.5) * 14, y: n.cy + (rand() - 0.5) * 14 });
     }
 
-    // saturation chain — aggressive decay: by visit 3 (sat ≈ 0.216) particles read as grey
+    // saturation chain — 0.6 decay per visit
     const sats: number[] = [];
     sats.push(1.0); // entry: full color
     let sat = 1.0;
@@ -186,21 +296,58 @@ function planParticles(seed: number, nodes: Node[], count: number): ParticlePlan
     }
     const finalSat = sats[sats.length - 1];
 
-    // pick estuary by final saturation: brighter → diluted (left), darker → hurtful (right)
-    // thresholds calibrated for 0.6 decay: visit 3 → 0.216 (diluted), 4–5 → 0.13/0.08 (diminished), 6+ → <0.05 (hurtful)
-    let estuary: number;
-    if (finalSat > 0.18) estuary = 0;
-    else if (finalSat > 0.06) estuary = 1;
-    else estuary = 2;
-    const exit = ESTUARIES[estuary];
+    // ---- routing decision ----
+    let destination: ParticleDestination;
+    let exitX: number;
+    let exitY: number;
 
-    // exit waypoint: chamber bottom center → estuary mouth
+    if (finalSat > 0.6) {
+      // rare survivor — DILUTED flank
+      destination = { kind: "diluted" };
+      exitX = FLANK_DILUTED.cx + (rand() - 0.5) * 24;
+      exitY = FLANK_DILUTED.cy + 40 + (rand() - 0.5) * 60;
+    } else if (finalSat < 0.04) {
+      // utterly drained — HURTFUL flank
+      destination = { kind: "hurtful" };
+      exitX = FLANK_HURTFUL.cx + (rand() - 0.5) * 24;
+      exitY = FLANK_HURTFUL.cy + 40 + (rand() - 0.5) * 60;
+    } else {
+      // route to a cost node weighted by produced_by overlap
+      const weights = costNodes.map((cn) => {
+        let w = 0;
+        for (const mid of visitedIds) {
+          if (cn.loss.produced_by.includes(mid)) w++;
+        }
+        return w;
+      });
+      const totalW = weights.reduce((a, b) => a + b, 0);
+      let pick = 0;
+      if (totalW === 0) {
+        pick = Math.floor(rand() * costNodes.length);
+      } else {
+        const r = rand() * totalW;
+        let acc = 0;
+        for (let k = 0; k < weights.length; k++) {
+          acc += weights[k];
+          if (r <= acc) {
+            pick = k;
+            break;
+          }
+        }
+      }
+      const cn = costNodes[pick];
+      destination = { kind: "cost", node: cn };
+      exitX = cn.cx + (rand() - 0.5) * 14;
+      exitY = cn.cy + (rand() - 0.5) * 14;
+    }
+
+    // exit transit: chamber bottom center → midpoint → destination
     wp.push({ x: CHAMBER_EXIT.x + (rand() - 0.5) * 60, y: CHAMBER_EXIT.y });
-    wp.push({ x: exit.x + (rand() - 0.5) * 30, y: exit.y - 20 });
+    wp.push({ x: exitX, y: exitY });
     sats.push(finalSat * 0.85);
     sats.push(finalSat * 0.7);
 
-    // timestamps: distribute roughly evenly with slight drift on entry/exit
+    // timestamps: distribute roughly evenly
     const N = wp.length;
     const times: number[] = [];
     for (let k = 0; k < N; k++) times.push(k / (N - 1));
@@ -214,7 +361,7 @@ function planParticles(seed: number, nodes: Node[], count: number): ParticlePlan
       duration: 11 + rand() * 7,
       delay: rand() * 14,
       size: 3.4 + rand() * 1.6,
-      estuary,
+      destination,
       finalSat,
     });
   }
@@ -408,66 +555,156 @@ function BadIntentCloud({ id, seed }: { id: number; seed: number }) {
   );
 }
 
-/* ---------- estuary outlet ---------- */
+/* ---------- cost node (one of ten) ---------- */
 
-function Estuary({
+function CostNodeGlyph({
+  cn,
+  onHover,
+  onLeave,
+  onSelect,
+}: {
+  cn: CostNode;
+  onHover: (cn: CostNode, x: number, y: number) => void;
+  onLeave: () => void;
+  onSelect: (cn: CostNode) => void;
+}) {
+  const color = LOSS_CATEGORIES[cn.loss.category].color;
+  return (
+    <g
+      style={{ cursor: "pointer" }}
+      onMouseEnter={(e) => onHover(cn, e.clientX, e.clientY)}
+      onMouseMove={(e) => onHover(cn, e.clientX, e.clientY)}
+      onMouseLeave={onLeave}
+      onClick={(e) => {
+        e.stopPropagation();
+        onSelect(cn);
+      }}
+    >
+      {/* invisible larger hit area — ~44px diameter */}
+      <circle cx={cn.cx} cy={cn.cy} r={22} fill="transparent" />
+      {/* outer halo */}
+      <circle cx={cn.cx} cy={cn.cy} r={8} fill={color} opacity={0.18} />
+      {/* core dot */}
+      <circle cx={cn.cx} cy={cn.cy} r={4.2} fill={color} opacity={0.95} />
+      {/* italic label below */}
+      <text
+        x={cn.cx}
+        y={cn.cy + 22}
+        textAnchor="middle"
+        fontFamily="'EB Garamond', ui-serif, Georgia, serif"
+        fontStyle="italic"
+        fontSize="11.5"
+        fill="#d8cfb8"
+        opacity={0.9}
+        style={{ pointerEvents: "none" }}
+      >
+        {cn.display}
+      </text>
+    </g>
+  );
+}
+
+/* ---------- die frame (subtle outline + mono header) ---------- */
+
+function DieFrame({
   cx,
   cy,
+  size,
+  header,
+}: {
+  cx: number;
+  cy: number;
+  size: number;
+  header: string;
+}) {
+  const half = size / 2;
+  return (
+    <g>
+      {/* faint frame */}
+      <rect
+        x={cx - half}
+        y={cy - half}
+        width={size}
+        height={size}
+        rx={10}
+        ry={10}
+        fill="none"
+        stroke="#3a362e"
+        strokeWidth={1}
+        strokeDasharray="2 4"
+        opacity={0.6}
+      />
+      {/* mono header above the die */}
+      <text
+        x={cx}
+        y={cy - half - 14}
+        textAnchor="middle"
+        fontFamily="'JetBrains Mono', ui-monospace, monospace"
+        fontSize="9.5"
+        letterSpacing="0.22em"
+        fill="#a89e8a"
+        opacity={0.8}
+      >
+        {header}
+      </text>
+    </g>
+  );
+}
+
+/* ---------- flank plume (DILUTED / HURTFUL) ---------- */
+
+function FlankPlume({
+  cx,
+  cy,
+  color,
   label,
-  darkness,
   reduced,
 }: {
   cx: number;
   cy: number;
+  color: string;
   label: string;
-  darkness: number; // 0..1, 1 = darkest
   reduced: boolean;
 }) {
-  // darkness drives the fill — lighter estuary = a touch of warmth, darker = pure shadow
-  const tint = darkness > 0.66 ? "#040404" : darkness > 0.33 ? "#191713" : "#2a241d";
-  const plumeD = `M ${cx - 28} ${cy - 4}
-            Q ${cx - 12} ${cy + 30} ${cx - 18} ${cy + 70}
-            Q ${cx} ${cy + 90} ${cx + 16} ${cy + 80}
-            L ${cx + 22} ${cy + 80}
-            Q ${cx + 6} ${cy + 50} ${cx + 24} ${cy + 4} Z`;
+  // turbulence-displaced ink plume, similar register to the prior estuaries
+  const plumeD = `M ${cx - 26} ${cy - 60}
+            Q ${cx - 12} ${cy - 30} ${cx - 18} ${cy + 30}
+            Q ${cx - 6} ${cy + 80} ${cx + 14} ${cy + 70}
+            L ${cx + 22} ${cy + 70}
+            Q ${cx + 6} ${cy + 30} ${cx + 24} ${cy - 60}
+            Q ${cx + 8} ${cy - 50} ${cx - 26} ${cy - 60} Z`;
   return (
     <g>
-      {/* mouth */}
+      {/* central body */}
       <ellipse
         cx={cx}
         cy={cy}
-        rx={36}
-        ry={14}
-        fill={tint}
-        opacity={0.92}
+        rx={26}
+        ry={62}
+        fill={color}
+        opacity={0.42}
         filter="url(#fc-soft-blur)"
       />
-      {/* pulsing plume below — static under reduced-motion */}
       {reduced ? (
-        <path
-          d={plumeD}
-          fill={tint}
-          opacity={0.7}
-          filter="url(#fc-turb)"
-        />
+        <path d={plumeD} fill={color} opacity={0.55} filter="url(#fc-turb)" />
       ) : (
         <motion.path
           d={plumeD}
-          fill={tint}
-          opacity={0.85}
+          fill={color}
+          opacity={0.65}
           filter="url(#fc-turb)"
-          animate={{ opacity: [0.55, 0.9, 0.55] }}
-          transition={{ duration: 5 + darkness * 2, repeat: Infinity, ease: "easeInOut" }}
+          animate={{ opacity: [0.45, 0.75, 0.45] }}
+          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
         />
       )}
       <text
         x={cx}
-        y={cy + 112}
+        y={cy + 102}
         textAnchor="middle"
         fontFamily="'JetBrains Mono', ui-monospace, monospace"
         fontSize="12"
         fontWeight="500"
-        letterSpacing="0.24em"
+        letterSpacing="0.28em"
         fill="#d8cfb8"
       >
         {label}
@@ -490,32 +727,51 @@ export function FilterChamber() {
   const badPuffCount = reduced ? 0 : narrow ? 4 : 8;
 
   const nodes = useMemo(() => buildNodes(), []);
+  const { dieA, dieB } = useMemo(
+    () => buildCostNodes(narrow ? "narrow" : "wide"),
+    [narrow],
+  );
+  const costNodesAll = useMemo(() => [...dieA, ...dieB], [dieA, dieB]);
   const particlePlans = useMemo(
-    () => planParticles(7, nodes, particleCount),
-    [nodes, particleCount],
+    () => planParticles(7, nodes, particleCount, costNodesAll),
+    [nodes, particleCount, costNodesAll],
   );
   const badPuffs = useMemo(
     () => Array.from({ length: badPuffCount }, (_, i) => i),
     [badPuffCount],
   );
 
-  // tooltip state — uses screen coords + container offset
+  // tooltip + modal state — covers both mechanism nodes and cost nodes
   const wrapRef = useRef<HTMLDivElement | null>(null);
-  const [tip, setTip] = useState<{ node: Node; x: number; y: number } | null>(
-    null,
-  );
-  const [selected, setSelected] = useState<Node | null>(null);
+  type TipState =
+    | { kind: "mech"; node: Node; x: number; y: number }
+    | { kind: "cost"; cn: CostNode; x: number; y: number };
+  const [tip, setTip] = useState<TipState | null>(null);
+  type SelState =
+    | { kind: "mech"; node: Node }
+    | { kind: "cost"; cn: CostNode };
+  const [selected, setSelected] = useState<SelState | null>(null);
 
   const onHover = (node: Node, clientX: number, clientY: number) => {
-    if (selected) return; // suppress hover tooltip while modal is open
+    if (selected) return;
     const rect = wrapRef.current?.getBoundingClientRect();
     if (!rect) return;
-    setTip({ node, x: clientX - rect.left, y: clientY - rect.top });
+    setTip({ kind: "mech", node, x: clientX - rect.left, y: clientY - rect.top });
+  };
+  const onCostHover = (cn: CostNode, clientX: number, clientY: number) => {
+    if (selected) return;
+    const rect = wrapRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    setTip({ kind: "cost", cn, x: clientX - rect.left, y: clientY - rect.top });
   };
   const onLeave = () => setTip(null);
   const onSelect = (node: Node) => {
     setTip(null);
-    setSelected(node);
+    setSelected({ kind: "mech", node });
+  };
+  const onCostSelect = (cn: CostNode) => {
+    setTip(null);
+    setSelected({ kind: "cost", cn });
   };
   const closeModal = () => setSelected(null);
 
@@ -779,35 +1035,87 @@ export function FilterChamber() {
           <ParticleStream key={`p-${p.id}`} plan={p} reduced={reduced} />
         ))}
 
-        {/* ---------- DARK CONVERGENCE STREAM under chamber ---------- */}
-        <g>
+        {/* ---------- THIN FILAMENTS from chamber exit branching to destinations ---------- */}
+        <g
+          stroke="#1a1916"
+          strokeWidth={1.2}
+          fill="none"
+          opacity={0.55}
+          filter="url(#fc-turb)"
+        >
+          {/* to DILUTED flank */}
           <path
-            d={`M ${CHAMBER_EXIT.x - 48} ${CHAMBER_EXIT.y - 4}
-                Q ${CHAMBER_EXIT.x - 30} ${CHAMBER_EXIT.y + 60}
-                  ${CHAMBER_EXIT.x - 100} ${VIEW_H - 90}
-                M ${CHAMBER_EXIT.x + 48} ${CHAMBER_EXIT.y - 4}
-                Q ${CHAMBER_EXIT.x + 30} ${CHAMBER_EXIT.y + 60}
-                  ${CHAMBER_EXIT.x + 100} ${VIEW_H - 90}
-                M ${CHAMBER_EXIT.x} ${CHAMBER_EXIT.y - 4}
-                L ${CHAMBER_EXIT.x} ${VIEW_H - 90}`}
-            stroke="#0a0a0c"
-            strokeWidth={26}
-            fill="none"
-            opacity={0.85}
-            filter="url(#fc-turb)"
-            strokeLinecap="round"
+            d={`M ${CHAMBER_EXIT.x} ${CHAMBER_EXIT.y}
+                Q ${CHAMBER_EXIT.x - 200} ${CHAMBER_EXIT.y + 60}
+                  ${FLANK_DILUTED.cx} ${FLANK_DILUTED.cy - 40}`}
+          />
+          {/* to Die A center */}
+          <path
+            d={`M ${CHAMBER_EXIT.x} ${CHAMBER_EXIT.y}
+                Q ${CHAMBER_EXIT.x - 60} ${CHAMBER_EXIT.y + 50}
+                  ${DIE_A_CX} ${DIE_CY - DIE_INSET - 8}`}
+          />
+          {/* to Die B center */}
+          <path
+            d={`M ${CHAMBER_EXIT.x} ${CHAMBER_EXIT.y}
+                Q ${CHAMBER_EXIT.x + 60} ${CHAMBER_EXIT.y + 50}
+                  ${DIE_B_CX} ${DIE_CY - DIE_INSET - 8}`}
+          />
+          {/* to HURTFUL flank */}
+          <path
+            d={`M ${CHAMBER_EXIT.x} ${CHAMBER_EXIT.y}
+                Q ${CHAMBER_EXIT.x + 200} ${CHAMBER_EXIT.y + 60}
+                  ${FLANK_HURTFUL.cx} ${FLANK_HURTFUL.cy - 40}`}
           />
         </g>
 
-        {/* ---------- ESTUARIES ---------- */}
-        {ESTUARIES.map((e, i) => (
-          <Estuary
-            key={e.label}
-            cx={e.x}
-            cy={e.y}
-            label={e.label}
-            darkness={i === 0 ? 0.25 : i === 1 ? 0.55 : 0.95}
-            reduced={reduced}
+        {/* ---------- FLANK PLUMES (DILUTED · HURTFUL) ---------- */}
+        <FlankPlume
+          cx={FLANK_DILUTED.cx}
+          cy={FLANK_DILUTED.cy}
+          color={FLANK_DILUTED.color}
+          label={FLANK_DILUTED.label}
+          reduced={reduced}
+        />
+        <FlankPlume
+          cx={FLANK_HURTFUL.cx}
+          cy={FLANK_HURTFUL.cy}
+          color={FLANK_HURTFUL.color}
+          label={FLANK_HURTFUL.label}
+          reduced={reduced}
+        />
+
+        {/* ---------- TWO DICE FRAMES + HEADERS ---------- */}
+        <DieFrame
+          cx={DIE_A_CX}
+          cy={DIE_CY}
+          size={DIE_SIZE}
+          header="§ — MATERIAL & HUMAN"
+        />
+        <DieFrame
+          cx={DIE_B_CX}
+          cy={DIE_CY}
+          size={DIE_SIZE}
+          header="§ — SOCIAL & EPISTEMIC"
+        />
+
+        {/* ---------- COST NODES (ten dots) ---------- */}
+        {dieA.map((cn) => (
+          <CostNodeGlyph
+            key={cn.id}
+            cn={cn}
+            onHover={onCostHover}
+            onLeave={onLeave}
+            onSelect={onCostSelect}
+          />
+        ))}
+        {dieB.map((cn) => (
+          <CostNodeGlyph
+            key={cn.id}
+            cn={cn}
+            onHover={onCostHover}
+            onLeave={onLeave}
+            onSelect={onCostSelect}
           />
         ))}
 
@@ -837,63 +1145,142 @@ export function FilterChamber() {
       </svg>
 
       {/* ---------- TOOLTIP (HTML overlay, follows cursor) ---------- */}
-      {tip && (
-        <div
-          role="tooltip"
-          style={{
-            position: "absolute",
-            left: Math.min(tip.x + 14, (wrapRef.current?.clientWidth ?? 9999) - 320),
-            top: Math.max(tip.y - 12, 0),
-            pointerEvents: "none",
-            zIndex: 5,
-            maxWidth: 300,
-            background: "rgba(20,19,17,0.96)",
-            border: `1px solid ${tip.node.color}`,
-            borderLeft: `3px solid ${tip.node.color}`,
-            padding: "10px 12px",
-            color: "var(--ivory)",
-            fontFamily: "'EB Garamond', ui-serif, Georgia, serif",
-            fontSize: 14,
-            lineHeight: 1.45,
-            boxShadow: "0 8px 24px rgba(0,0,0,0.45)",
-            borderRadius: 2,
-          }}
-        >
+      {tip && tip.kind === "mech" && (() => {
+        const producedLosses =
+          // small "Produces:" footer (truncate at 2; full list lives in the modal)
+          LOSSES.filter((l) => l.produced_by.includes(tip.node.m.id));
+        return (
           <div
+            role="tooltip"
             style={{
-              fontFamily: "'JetBrains Mono', ui-monospace, monospace",
-              fontSize: 9.5,
-              letterSpacing: "0.18em",
-              textTransform: "uppercase",
-              color: tip.node.color,
-              marginBottom: 6,
-            }}
-          >
-            {tip.node.m.year} · {tip.node.m.originator}
-          </div>
-          <div
-            style={{
-              fontFamily: "'Fraunces', ui-serif, serif",
-              fontSize: 16,
-              fontWeight: 500,
-              marginBottom: 6,
+              position: "absolute",
+              left: Math.min(tip.x + 14, (wrapRef.current?.clientWidth ?? 9999) - 320),
+              top: Math.max(tip.y - 12, 0),
+              pointerEvents: "none",
+              zIndex: 5,
+              maxWidth: 300,
+              background: "rgba(20,19,17,0.96)",
+              border: `1px solid ${tip.node.color}`,
+              borderLeft: `3px solid ${tip.node.color}`,
+              padding: "10px 12px",
               color: "var(--ivory)",
+              fontFamily: "'EB Garamond', ui-serif, Georgia, serif",
+              fontSize: 14,
+              lineHeight: 1.45,
+              boxShadow: "0 8px 24px rgba(0,0,0,0.45)",
+              borderRadius: 2,
             }}
           >
-            {tip.node.m.name}
+            <div
+              style={{
+                fontFamily: "'JetBrains Mono', ui-monospace, monospace",
+                fontSize: 9.5,
+                letterSpacing: "0.18em",
+                textTransform: "uppercase",
+                color: tip.node.color,
+                marginBottom: 6,
+              }}
+            >
+              {tip.node.m.year} · {tip.node.m.originator}
+            </div>
+            <div
+              style={{
+                fontFamily: "'Fraunces', ui-serif, serif",
+                fontSize: 16,
+                fontWeight: 500,
+                marginBottom: 6,
+                color: "var(--ivory)",
+              }}
+            >
+              {tip.node.m.name}
+            </div>
+            <div style={{ color: "var(--paper)", fontStyle: "italic" }}>
+              {tip.node.m.brief}
+            </div>
+            {producedLosses.length > 0 && (
+              <div
+                style={{
+                  marginTop: 8,
+                  paddingTop: 8,
+                  borderTop: "1px solid var(--border-soft)",
+                  fontFamily: "'JetBrains Mono', ui-monospace, monospace",
+                  fontSize: 9.5,
+                  letterSpacing: "0.12em",
+                  textTransform: "uppercase",
+                  color: "var(--mute)",
+                }}
+              >
+                → Produces:{" "}
+                {producedLosses
+                  .slice(0, 2)
+                  .map((l) => l.name)
+                  .join(", ")}
+                {producedLosses.length > 2 && ` +${producedLosses.length - 2}`}
+              </div>
+            )}
           </div>
-          <div style={{ color: "var(--paper)", fontStyle: "italic" }}>
-            {tip.node.m.brief}
+        );
+      })()}
+      {tip && tip.kind === "cost" && (() => {
+        const tint = LOSS_CATEGORIES[tip.cn.loss.category].color;
+        return (
+          <div
+            role="tooltip"
+            style={{
+              position: "absolute",
+              left: Math.min(tip.x + 14, (wrapRef.current?.clientWidth ?? 9999) - 320),
+              top: Math.max(tip.y - 12, 0),
+              pointerEvents: "none",
+              zIndex: 5,
+              maxWidth: 300,
+              background: "rgba(20,19,17,0.96)",
+              border: `1px solid ${tint}`,
+              borderLeft: `3px solid ${tint}`,
+              padding: "10px 12px",
+              color: "var(--ivory)",
+              fontFamily: "'EB Garamond', ui-serif, Georgia, serif",
+              fontSize: 14,
+              lineHeight: 1.45,
+              boxShadow: "0 8px 24px rgba(0,0,0,0.45)",
+              borderRadius: 2,
+            }}
+          >
+            <div
+              style={{
+                fontFamily: "'JetBrains Mono', ui-monospace, monospace",
+                fontSize: 9.5,
+                letterSpacing: "0.18em",
+                textTransform: "uppercase",
+                color: tint,
+                marginBottom: 6,
+              }}
+            >
+              {LOSS_CATEGORIES[tip.cn.loss.category].label}
+            </div>
+            <div
+              style={{
+                fontFamily: "'Fraunces', ui-serif, serif",
+                fontSize: 16,
+                fontWeight: 500,
+                marginBottom: 6,
+                color: "var(--ivory)",
+              }}
+            >
+              {tip.cn.display}
+            </div>
+            <div style={{ color: "var(--paper)", fontStyle: "italic" }}>
+              {tip.cn.loss.brief}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
-      {/* ---------- MODAL (click-through; full claim + source + link) ---------- */}
-      {selected && (
+      {/* ---------- MODAL (mechanism node — click-through; full claim + source + link) ---------- */}
+      {selected && selected.kind === "mech" && (
         <div
           role="dialog"
           aria-modal="true"
-          aria-labelledby={`fc-modal-title-${selected.m.id}`}
+          aria-labelledby={`fc-modal-title-${selected.node.m.id}`}
           onClick={closeModal}
           style={{
             position: "fixed",
@@ -912,8 +1299,8 @@ export function FilterChamber() {
             onClick={(e) => e.stopPropagation()}
             style={{
               background: "var(--surface)",
-              border: `1px solid ${selected.color}`,
-              borderLeft: `4px solid ${selected.color}`,
+              border: `1px solid ${selected.node.color}`,
+              borderLeft: `4px solid ${selected.node.color}`,
               maxWidth: 640,
               width: "100%",
               maxHeight: "85vh",
@@ -940,8 +1327,7 @@ export function FilterChamber() {
                 cursor: "pointer",
                 fontSize: 22,
                 lineHeight: 1,
-                fontFamily:
-                  "'JetBrains Mono', ui-monospace, monospace",
+                fontFamily: "'JetBrains Mono', ui-monospace, monospace",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -951,7 +1337,7 @@ export function FilterChamber() {
                 transition: "border-color .15s, color .15s",
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = selected.color;
+                e.currentTarget.style.borderColor = selected.node.color;
                 e.currentTarget.style.color = "var(--ivory)";
               }}
               onMouseLeave={(e) => {
@@ -968,16 +1354,17 @@ export function FilterChamber() {
                 fontSize: 10.5,
                 letterSpacing: "0.2em",
                 textTransform: "uppercase",
-                color: selected.color,
+                color: selected.node.color,
                 marginBottom: 14,
                 paddingRight: 56,
               }}
             >
-              {selected.m.year} · {selected.m.originator} · {selected.m.field}
+              {selected.node.m.year} · {selected.node.m.originator} ·{" "}
+              {selected.node.m.field}
             </div>
 
             <h3
-              id={`fc-modal-title-${selected.m.id}`}
+              id={`fc-modal-title-${selected.node.m.id}`}
               style={{
                 fontFamily: "'Fraunces', ui-serif, serif",
                 fontSize: "clamp(1.5rem, 3vw, 2rem)",
@@ -988,7 +1375,7 @@ export function FilterChamber() {
                 letterSpacing: "-0.005em",
               }}
             >
-              {selected.m.name}
+              {selected.node.m.name}
             </h3>
 
             <p
@@ -1000,7 +1387,7 @@ export function FilterChamber() {
                 marginBottom: 22,
               }}
             >
-              {selected.m.claim}
+              {selected.node.m.claim}
             </p>
 
             <p
@@ -1015,26 +1402,25 @@ export function FilterChamber() {
                 borderTop: "1px solid var(--border-soft)",
               }}
             >
-              {selected.m.source}
+              {selected.node.m.source}
             </p>
 
-            {selected.m.url && (
+            {selected.node.m.url && (
               <a
-                href={selected.m.url}
+                href={selected.node.m.url}
                 target="_blank"
                 rel="noreferrer"
                 style={{
-                  fontFamily:
-                    "'JetBrains Mono', ui-monospace, monospace",
+                  fontFamily: "'JetBrains Mono', ui-monospace, monospace",
                   fontSize: 11,
                   letterSpacing: "0.16em",
                   textTransform: "uppercase",
-                  color: selected.color,
+                  color: selected.node.color,
                   textDecoration: "none",
                   display: "inline-flex",
                   alignItems: "center",
                   gap: 6,
-                  borderBottom: `1px solid ${selected.color}`,
+                  borderBottom: `1px solid ${selected.node.color}`,
                   paddingBottom: 2,
                 }}
               >
@@ -1044,6 +1430,265 @@ export function FilterChamber() {
           </div>
         </div>
       )}
+
+      {/* ---------- MODAL (cost node — full claim, observable, incidence, links) ---------- */}
+      {selected && selected.kind === "cost" && (() => {
+        const loss = selected.cn.loss;
+        const tint = LOSS_CATEGORIES[loss.category].color;
+        return (
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={`fc-modal-loss-title-${loss.id}`}
+            onClick={closeModal}
+            style={{
+              position: "fixed",
+              inset: 0,
+              zIndex: 100,
+              background: "rgba(8,7,6,0.78)",
+              backdropFilter: "blur(6px)",
+              WebkitBackdropFilter: "blur(6px)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "clamp(16px, 4vw, 48px)",
+            }}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                background: "var(--surface)",
+                border: `1px solid ${tint}`,
+                borderLeft: `4px solid ${tint}`,
+                maxWidth: 720,
+                width: "100%",
+                maxHeight: "88vh",
+                overflowY: "auto",
+                padding: "clamp(22px, 3.4vw, 38px)",
+                position: "relative",
+                boxShadow: "0 24px 64px rgba(0,0,0,0.7)",
+                borderRadius: 2,
+                color: "var(--ivory)",
+              }}
+            >
+              <button
+                onClick={closeModal}
+                aria-label="Close"
+                style={{
+                  position: "absolute",
+                  top: 8,
+                  right: 8,
+                  background: "transparent",
+                  border: "1px solid var(--border-mid)",
+                  color: "var(--paper)",
+                  width: 44,
+                  height: 44,
+                  cursor: "pointer",
+                  fontSize: 22,
+                  lineHeight: 1,
+                  fontFamily: "'JetBrains Mono', ui-monospace, monospace",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: 0,
+                  borderRadius: 2,
+                  touchAction: "manipulation",
+                  transition: "border-color .15s, color .15s",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = tint;
+                  e.currentTarget.style.color = "var(--ivory)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = "var(--border-mid)";
+                  e.currentTarget.style.color = "var(--paper)";
+                }}
+              >
+                ×
+              </button>
+
+              <div
+                style={{
+                  fontFamily: "'JetBrains Mono', ui-monospace, monospace",
+                  fontSize: 10.5,
+                  letterSpacing: "0.2em",
+                  textTransform: "uppercase",
+                  color: tint,
+                  marginBottom: 14,
+                  paddingRight: 56,
+                }}
+              >
+                {LOSS_CATEGORIES[loss.category].label} · cost ledger
+              </div>
+
+              <h3
+                id={`fc-modal-loss-title-${loss.id}`}
+                style={{
+                  fontFamily: "'Fraunces', ui-serif, serif",
+                  fontSize: "clamp(1.5rem, 3vw, 2rem)",
+                  fontWeight: 500,
+                  color: "var(--ivory)",
+                  marginBottom: 18,
+                  lineHeight: 1.15,
+                  letterSpacing: "-0.005em",
+                }}
+              >
+                {loss.name}
+              </h3>
+
+              <p
+                style={{
+                  fontFamily: "'EB Garamond', ui-serif, Georgia, serif",
+                  fontSize: 17,
+                  lineHeight: 1.6,
+                  color: "var(--paper)",
+                  marginBottom: 22,
+                }}
+              >
+                {loss.claim}
+              </p>
+
+              {/* OBSERVABLE */}
+              <div style={{ marginBottom: 16 }}>
+                <div
+                  style={{
+                    fontFamily: "'JetBrains Mono', ui-monospace, monospace",
+                    fontSize: 10,
+                    letterSpacing: "0.18em",
+                    textTransform: "uppercase",
+                    color: "var(--dim)",
+                    marginBottom: 4,
+                  }}
+                >
+                  Observable
+                </div>
+                <div
+                  style={{
+                    fontFamily: "'EB Garamond', ui-serif, Georgia, serif",
+                    fontSize: 15,
+                    lineHeight: 1.55,
+                    color: "var(--paper)",
+                  }}
+                >
+                  {loss.observable}
+                </div>
+              </div>
+
+              {/* INCIDENCE */}
+              <div style={{ marginBottom: 22 }}>
+                <div
+                  style={{
+                    fontFamily: "'JetBrains Mono', ui-monospace, monospace",
+                    fontSize: 10,
+                    letterSpacing: "0.18em",
+                    textTransform: "uppercase",
+                    color: "var(--dim)",
+                    marginBottom: 4,
+                  }}
+                >
+                  Incidence
+                </div>
+                <div
+                  style={{
+                    fontFamily: "'EB Garamond', ui-serif, Georgia, serif",
+                    fontStyle: "italic",
+                    fontSize: 14.5,
+                    lineHeight: 1.55,
+                    color: "var(--mute)",
+                  }}
+                >
+                  {loss.incidence}
+                </div>
+              </div>
+
+              {/* PRODUCED BY — anchor pills */}
+              {loss.produced_by.length > 0 && (
+                <div
+                  style={{
+                    marginBottom: 22,
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: 8,
+                    alignItems: "center",
+                  }}
+                >
+                  <span
+                    style={{
+                      fontFamily: "'JetBrains Mono', ui-monospace, monospace",
+                      fontSize: 10,
+                      letterSpacing: "0.18em",
+                      textTransform: "uppercase",
+                      color: "var(--dim)",
+                      marginRight: 4,
+                    }}
+                  >
+                    Produced by
+                  </span>
+                  {loss.produced_by.map((mid) => (
+                    <a
+                      key={mid}
+                      href={`#m-${mid}`}
+                      onClick={closeModal}
+                      style={{
+                        fontFamily:
+                          "'JetBrains Mono', ui-monospace, monospace",
+                        fontSize: 10.5,
+                        letterSpacing: "0.14em",
+                        textTransform: "uppercase",
+                        color: "var(--paper)",
+                        border: "1px solid var(--border-mid)",
+                        padding: "4px 8px",
+                        borderRadius: 2,
+                        textDecoration: "none",
+                      }}
+                    >
+                      {mid.replace(/-/g, " ")}
+                    </a>
+                  ))}
+                </div>
+              )}
+
+              <p
+                style={{
+                  fontFamily: "'EB Garamond', ui-serif, Georgia, serif",
+                  fontSize: 13,
+                  lineHeight: 1.55,
+                  fontStyle: "italic",
+                  color: "var(--mute)",
+                  paddingTop: 14,
+                  marginBottom: 18,
+                  borderTop: "1px solid var(--border-soft)",
+                }}
+              >
+                {loss.reference}
+              </p>
+
+              {loss.url && (
+                <a
+                  href={loss.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{
+                    fontFamily: "'JetBrains Mono', ui-monospace, monospace",
+                    fontSize: 11,
+                    letterSpacing: "0.16em",
+                    textTransform: "uppercase",
+                    color: tint,
+                    textDecoration: "none",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    borderBottom: `1px solid ${tint}`,
+                    paddingBottom: 2,
+                  }}
+                >
+                  Reference <ExternalLink size={12} />
+                </a>
+              )}
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
