@@ -153,13 +153,13 @@ const FLANK_DILUTED = {
   cx: BOX.x + 60,
   cy: DIE_CY,
   color: "#c9a070",
-  label: "DILUTED",
+  label: "DILUTED GOOD",
 };
 const FLANK_HURTFUL = {
   cx: BOX.x + BOX.w - 60,
   cy: DIE_CY,
   color: "#8a1f1f",
-  label: "HURTFUL",
+  label: "HARMFUL OUTCOMES",
 };
 
 /* ---------- node layout: position each mechanism inside its category panel ---------- */
