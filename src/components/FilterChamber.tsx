@@ -126,7 +126,7 @@ function buildCostNodes(mode: "wide" | "narrow" = "wide"): {
       { id: "problem-latency", loss: byId["problem-latency"], cx: DIE_B_CX + inset, cy: DIE_CY - inset, display: "Problem Latency" },
       { id: "lost-correction", loss: byId["lost-correction"], cx: DIE_B_CX - inset, cy: DIE_CY + inset, display: "Lost Correction" },
       { id: "epistemic-capture", loss: byId["epistemic-capture"], cx: DIE_B_CX + inset, cy: DIE_CY + inset, display: "Epistemic Capture" },
-      { id: "coordination-tax", loss: byId["coordination-tax"], cx: DIE_B_CX, cy: DIE_CY + inset * 2 + 4, display: "Trust" },
+      { id: "coordination-tax", loss: byId["coordination-tax"], cx: DIE_B_CX, cy: DIE_CY + inset * 2 + 4, display: "Lost Trust" },
     ];
     return { dieA: a, dieB: b };
   }
@@ -140,7 +140,7 @@ function buildCostNodes(mode: "wide" | "narrow" = "wide"): {
     { id: "moral-conditioning", loss: byId["moral-conditioning"], cx: DIE_A_CX + DIE_INSET, cy: DIE_CY + DIE_INSET, display: "Moral Conditioning" },
   ];
   const b: CostNode[] = [
-    { id: "coordination-tax", loss: byId["coordination-tax"], cx: DIE_B_CX, cy: DIE_CY, display: "Trust" },
+    { id: "coordination-tax", loss: byId["coordination-tax"], cx: DIE_B_CX, cy: DIE_CY, display: "Lost Trust" },
     { id: "legitimacy-depletion", loss: byId["legitimacy-depletion"], cx: DIE_B_CX - DIE_INSET, cy: DIE_CY - DIE_INSET, display: "Legitimacy Depletion" },
     { id: "problem-latency", loss: byId["problem-latency"], cx: DIE_B_CX + DIE_INSET, cy: DIE_CY - DIE_INSET, display: "Problem Latency" },
     { id: "lost-correction", loss: byId["lost-correction"], cx: DIE_B_CX - DIE_INSET, cy: DIE_CY + DIE_INSET, display: "Lost Correction" },
