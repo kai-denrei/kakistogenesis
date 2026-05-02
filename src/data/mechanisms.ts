@@ -153,7 +153,7 @@ export const MECHANISMS: Mechanism[] = [
     brief:
       "Concentrated benefits beat diffuse costs. The few mobilize; the many free-ride.",
     claim:
-      "Concentrated benefits and diffuse costs systematically favor small organized minorities over large unorganized majorities. The few mobilize; the many free-ride.",
+      "Groups of individuals with a common interest will often not act together to achieve that interest. Coercion, social pressure, incentives, and risk prevent cooperation despite the shared goal. Olson's 1965 contribution is the formal mechanism: in large groups, each member's stake is too small to justify the personal cost of acting, and the rational individual choice is to free-ride on others' efforts. The result is that concentrated benefits and diffuse costs systematically favor small organized minorities over large unorganized majorities. The few mobilize; the many do not. The institutional asymmetry is the equilibrium of rational individual choice, not a failure of public spirit.",
     source:
       "Olson, M. (1965). The Logic of Collective Action: Public Goods and the Theory of Groups. Harvard University Press.",
     url: "https://en.wikipedia.org/wiki/The_Logic_of_Collective_Action",
