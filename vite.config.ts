@@ -1,6 +1,7 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
+import pkg from "./package.json" with { type: "json" };
 
 // In production we deploy to https://kai-denrei.github.io/kakistogenesis/
 // so Vite must rewrite asset URLs against that subpath.
@@ -10,6 +11,9 @@ export default defineConfig(({ command }) => {
   const base = command === "build" ? "/kakistogenesis/" : "/";
   return {
     base,
+    define: {
+      __APP_VERSION__: JSON.stringify(pkg.version),
+    },
     plugins: [
       react(),
       VitePWA({

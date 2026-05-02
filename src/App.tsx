@@ -617,6 +617,18 @@ function Footer() {
         psychopathy prevalence — flagged in the source line or in the linked
         literature.
       </p>
+      <p
+        className="font-mono"
+        style={{
+          fontSize: 9.5,
+          color: "var(--dim)",
+          letterSpacing: "0.22em",
+          marginTop: 24,
+          textTransform: "uppercase",
+        }}
+      >
+        v{__APP_VERSION__}
+      </p>
     </footer>
   );
 }
