@@ -36,7 +36,7 @@ function LineageCard({
   return (
     <button
       onClick={() => onOpen(e)}
-      className="font-display"
+      className="font-display lineage-card"
       style={{
         textAlign: "left",
         background: "transparent",
@@ -48,12 +48,6 @@ function LineageCard({
         color: "inherit",
         transition: "background-color .15s",
         display: "block",
-      }}
-      onMouseEnter={(ev) => {
-        ev.currentTarget.style.background = "rgba(255,255,255,0.018)";
-      }}
-      onMouseLeave={(ev) => {
-        ev.currentTarget.style.background = "transparent";
       }}
     >
       <div
@@ -234,6 +228,7 @@ function LineageModal({
         alignItems: "center",
         justifyContent: "center",
         padding: "clamp(16px, 4vw, 48px)",
+        overscrollBehavior: "contain",
       }}
     >
       <div
@@ -244,9 +239,12 @@ function LineageModal({
           borderLeft: `4px solid ${tint}`,
           maxWidth: 720,
           width: "100%",
-          maxHeight: "88vh",
+          maxHeight: "min(88dvh, calc(100dvh - 32px))",
           overflowY: "auto",
+          overscrollBehavior: "contain",
           padding: "clamp(22px, 3.4vw, 38px)",
+          paddingBottom:
+            "max(clamp(22px, 3.4vw, 38px), env(safe-area-inset-bottom))",
           position: "relative",
           boxShadow: "0 24px 64px rgba(0,0,0,0.7)",
           borderRadius: 2,

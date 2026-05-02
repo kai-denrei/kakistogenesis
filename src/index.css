@@ -210,7 +210,17 @@ body.is-scroll-locked {
   inset: 0;
   width: 100%;
   overflow: hidden;
+  /* Prevent scroll-chaining out of the modal panel into the locked body. */
+  overscroll-behavior: contain;
   /* top is set inline by the lock helper to preserve scroll position */
+}
+
+/* Lineage cards: scope the highlight to hover-capable pointers so a tap on
+   touch devices doesn't leave the card visually "stuck" after the modal opens. */
+@media (hover: hover) {
+  .lineage-card:hover {
+    background: rgba(255, 255, 255, 0.018);
+  }
 }
 
 /* Safe areas for the sticky tab bar on notched iPhones. */

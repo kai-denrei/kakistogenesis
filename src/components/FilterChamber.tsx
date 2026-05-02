@@ -469,18 +469,34 @@ function MechanismNode({
   onLeave: () => void;
   onSelect: (n: Node) => void;
 }) {
-  // On touch devices we skip the tooltip and go straight to the modal — the
-  // modal contains the same brief plus the source. The double-fire of
-  // touchstart+click was opening the modal before the tooltip could be read.
+  // Tap-vs-scroll discrimination: a vertical swipe that begins on a node must
+  // scroll the page, not open the modal. Track pointerdown coords + timestamp
+  // and only fire onSelect when movement stayed within ~10px and the press
+  // ended within 600ms. touchAction: pan-y lets the browser claim vertical
+  // pans natively before our handler ever runs.
+  const downRef = useRef<{ x: number; y: number; t: number } | null>(null);
   return (
     <g
-      style={{ cursor: "pointer" }}
+      style={{ cursor: "pointer", touchAction: "pan-y" }}
       onMouseEnter={(e) => onHover(node, e.clientX, e.clientY)}
       onMouseMove={(e) => onHover(node, e.clientX, e.clientY)}
       onMouseLeave={onLeave}
-      onClick={(e) => {
+      onPointerDown={(e) => {
+        downRef.current = { x: e.clientX, y: e.clientY, t: e.timeStamp };
+      }}
+      onPointerUp={(e) => {
+        const d = downRef.current;
+        downRef.current = null;
+        if (!d) return;
+        const dx = e.clientX - d.x;
+        const dy = e.clientY - d.y;
+        if (dx * dx + dy * dy > 100) return;
+        if (e.timeStamp - d.t > 600) return;
         e.stopPropagation();
         onSelect(node);
+      }}
+      onPointerCancel={() => {
+        downRef.current = null;
       }}
     >
       {/* invisible larger hit area — 22px radius gives ~44px touch diameter */}
@@ -649,15 +665,30 @@ function CostNodeGlyph({
   onSelect: (cn: CostNode) => void;
 }) {
   const color = LOSS_CATEGORIES[cn.loss.category].color;
+  // Same tap-vs-scroll guard as MechanismNode.
+  const downRef = useRef<{ x: number; y: number; t: number } | null>(null);
   return (
     <g
-      style={{ cursor: "pointer" }}
+      style={{ cursor: "pointer", touchAction: "pan-y" }}
       onMouseEnter={(e) => onHover(cn, e.clientX, e.clientY)}
       onMouseMove={(e) => onHover(cn, e.clientX, e.clientY)}
       onMouseLeave={onLeave}
-      onClick={(e) => {
+      onPointerDown={(e) => {
+        downRef.current = { x: e.clientX, y: e.clientY, t: e.timeStamp };
+      }}
+      onPointerUp={(e) => {
+        const d = downRef.current;
+        downRef.current = null;
+        if (!d) return;
+        const dx = e.clientX - d.x;
+        const dy = e.clientY - d.y;
+        if (dx * dx + dy * dy > 100) return;
+        if (e.timeStamp - d.t > 600) return;
         e.stopPropagation();
         onSelect(cn);
+      }}
+      onPointerCancel={() => {
+        downRef.current = null;
       }}
     >
       {/* invisible larger hit area — ~44px diameter */}
@@ -756,34 +787,39 @@ function FlankPlume({
   label: string;
   reduced: boolean;
 }) {
-  // turbulence-displaced ink plume, similar register to the prior estuaries
-  const plumeD = `M ${cx - 26} ${cy - 60}
-            Q ${cx - 12} ${cy - 30} ${cx - 18} ${cy + 30}
-            Q ${cx - 6} ${cy + 80} ${cx + 14} ${cy + 70}
-            L ${cx + 22} ${cy + 70}
-            Q ${cx + 6} ${cy + 30} ${cx + 24} ${cy - 60}
-            Q ${cx + 8} ${cy - 50} ${cx - 26} ${cy - 60} Z`;
+  // Single tall oblong (capsule). One shape, no inner echo: rounded-rect with
+  // rx = half its width, soft-blurred so the edge keeps the ink-on-paper
+  // register without the prior turbulence-displaced silhouette.
+  const w = 48;
+  const h = 140;
+  const x = cx - w / 2;
+  const y = cy - h / 2;
+  const rx = w / 2;
   return (
     <g>
-      {/* central body */}
-      <ellipse
-        cx={cx}
-        cy={cy}
-        rx={26}
-        ry={62}
-        fill={color}
-        opacity={0.42}
-        filter="url(#fc-soft-blur)"
-      />
       {reduced ? (
-        <path d={plumeD} fill={color} opacity={0.55} filter="url(#fc-turb)" />
-      ) : (
-        <motion.path
-          d={plumeD}
+        <rect
+          x={x}
+          y={y}
+          width={w}
+          height={h}
+          rx={rx}
+          ry={rx}
           fill={color}
-          opacity={0.65}
-          filter="url(#fc-turb)"
-          animate={{ opacity: [0.45, 0.75, 0.45] }}
+          opacity={0.6}
+          filter="url(#fc-soft-blur)"
+        />
+      ) : (
+        <motion.rect
+          x={x}
+          y={y}
+          width={w}
+          height={h}
+          rx={rx}
+          ry={rx}
+          fill={color}
+          filter="url(#fc-soft-blur)"
+          animate={{ opacity: [0.5, 0.72, 0.5] }}
           transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
         />
       )}
@@ -1384,6 +1420,7 @@ export function FilterChamber() {
             alignItems: "center",
             justifyContent: "center",
             padding: "clamp(16px, 4vw, 48px)",
+            overscrollBehavior: "contain",
           }}
         >
           <div
@@ -1394,9 +1431,12 @@ export function FilterChamber() {
               borderLeft: `4px solid ${selected.node.color}`,
               maxWidth: 640,
               width: "100%",
-              maxHeight: "85vh",
+              maxHeight: "min(88dvh, calc(100dvh - 32px))",
               overflowY: "auto",
+              overscrollBehavior: "contain",
               padding: "clamp(22px, 3.4vw, 36px)",
+              paddingBottom:
+                "max(clamp(22px, 3.4vw, 36px), env(safe-area-inset-bottom))",
               position: "relative",
               boxShadow: "0 24px 64px rgba(0,0,0,0.7)",
               borderRadius: 2,
@@ -1543,6 +1583,7 @@ export function FilterChamber() {
               alignItems: "center",
               justifyContent: "center",
               padding: "clamp(16px, 4vw, 48px)",
+              overscrollBehavior: "contain",
             }}
           >
             <div
@@ -1553,9 +1594,12 @@ export function FilterChamber() {
                 borderLeft: `4px solid ${tint}`,
                 maxWidth: 720,
                 width: "100%",
-                maxHeight: "88vh",
+                maxHeight: "min(88dvh, calc(100dvh - 32px))",
                 overflowY: "auto",
+                overscrollBehavior: "contain",
                 padding: "clamp(22px, 3.4vw, 38px)",
+                paddingBottom:
+                  "max(clamp(22px, 3.4vw, 38px), env(safe-area-inset-bottom))",
                 position: "relative",
                 boxShadow: "0 24px 64px rgba(0,0,0,0.7)",
                 borderRadius: 2,
