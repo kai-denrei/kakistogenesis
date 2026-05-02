@@ -8,6 +8,9 @@ import {
   type CategoryKey,
   type Mechanism,
 } from "../data/mechanisms";
+import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
+import { usePrefersReducedMotion } from "../hooks/usePrefersReducedMotion";
+import { useIsNarrow } from "../hooks/useIsNarrow";
 
 /**
  * Filter Chamber — V1.1.
@@ -249,24 +252,22 @@ function MechanismNode({
   onLeave: () => void;
   onSelect: (n: Node) => void;
 }) {
+  // On touch devices we skip the tooltip and go straight to the modal — the
+  // modal contains the same brief plus the source. The double-fire of
+  // touchstart+click was opening the modal before the tooltip could be read.
   return (
     <g
       style={{ cursor: "pointer" }}
       onMouseEnter={(e) => onHover(node, e.clientX, e.clientY)}
       onMouseMove={(e) => onHover(node, e.clientX, e.clientY)}
       onMouseLeave={onLeave}
-      onTouchStart={(e) => {
-        const t = e.touches[0];
-        if (t) onHover(node, t.clientX, t.clientY);
-      }}
-      onTouchEnd={onLeave}
       onClick={(e) => {
         e.stopPropagation();
         onSelect(node);
       }}
     >
-      {/* invisible larger hit area for easier hover */}
-      <circle cx={node.cx} cy={node.cy} r={14} fill="transparent" />
+      {/* invisible larger hit area — 22px radius gives ~44px touch diameter */}
+      <circle cx={node.cx} cy={node.cy} r={22} fill="transparent" />
       {/* outer halo */}
       <circle
         cx={node.cx}
@@ -303,7 +304,7 @@ function MechanismNode({
 
 /* ---------- particle stream component ---------- */
 
-function ParticleStream({ plan }: { plan: ParticlePlan }) {
+function ParticleStream({ plan, reduced }: { plan: ParticlePlan; reduced: boolean }) {
   const xs = plan.waypoints.map((w) => w.x);
   const ys = plan.waypoints.map((w) => w.y);
   const colors = plan.saturations.map((s) => fadeToShadow(plan.color, 1 - s));
@@ -316,6 +317,23 @@ function ParticleStream({ plan }: { plan: ParticlePlan }) {
     if (i === N - 2) return 0.85;
     return 1;
   });
+
+  // Reduced-motion: render a single static dot at a mid-path waypoint so
+  // the chamber composition still reads as "particles passing through filters"
+  // without continuous animation.
+  if (reduced) {
+    const midIdx = Math.max(1, Math.floor(N / 2));
+    return (
+      <circle
+        cx={xs[midIdx]}
+        cy={ys[midIdx]}
+        r={plan.size}
+        fill={colors[midIdx]}
+        opacity={0.85}
+        style={{ mixBlendMode: "screen" }}
+      />
+    );
+  }
 
   return (
     <motion.circle
@@ -397,14 +415,21 @@ function Estuary({
   cy,
   label,
   darkness,
+  reduced,
 }: {
   cx: number;
   cy: number;
   label: string;
   darkness: number; // 0..1, 1 = darkest
+  reduced: boolean;
 }) {
   // darkness drives the fill — lighter estuary = a touch of warmth, darker = pure shadow
   const tint = darkness > 0.66 ? "#040404" : darkness > 0.33 ? "#191713" : "#2a241d";
+  const plumeD = `M ${cx - 28} ${cy - 4}
+            Q ${cx - 12} ${cy + 30} ${cx - 18} ${cy + 70}
+            Q ${cx} ${cy + 90} ${cx + 16} ${cy + 80}
+            L ${cx + 22} ${cy + 80}
+            Q ${cx + 6} ${cy + 50} ${cx + 24} ${cy + 4} Z`;
   return (
     <g>
       {/* mouth */}
@@ -417,19 +442,24 @@ function Estuary({
         opacity={0.92}
         filter="url(#fc-soft-blur)"
       />
-      {/* pulsing plume below */}
-      <motion.path
-        d={`M ${cx - 28} ${cy - 4}
-            Q ${cx - 12} ${cy + 30} ${cx - 18} ${cy + 70}
-            Q ${cx} ${cy + 90} ${cx + 16} ${cy + 80}
-            L ${cx + 22} ${cy + 80}
-            Q ${cx + 6} ${cy + 50} ${cx + 24} ${cy + 4} Z`}
-        fill={tint}
-        opacity={0.85}
-        filter="url(#fc-turb)"
-        animate={{ opacity: [0.55, 0.9, 0.55] }}
-        transition={{ duration: 5 + darkness * 2, repeat: Infinity, ease: "easeInOut" }}
-      />
+      {/* pulsing plume below — static under reduced-motion */}
+      {reduced ? (
+        <path
+          d={plumeD}
+          fill={tint}
+          opacity={0.7}
+          filter="url(#fc-turb)"
+        />
+      ) : (
+        <motion.path
+          d={plumeD}
+          fill={tint}
+          opacity={0.85}
+          filter="url(#fc-turb)"
+          animate={{ opacity: [0.55, 0.9, 0.55] }}
+          transition={{ duration: 5 + darkness * 2, repeat: Infinity, ease: "easeInOut" }}
+        />
+      )}
       <text
         x={cx}
         y={cy + 112}
@@ -449,9 +479,25 @@ function Estuary({
 /* ---------- root chamber ---------- */
 
 export function FilterChamber() {
+  const reduced = usePrefersReducedMotion();
+  const narrow = useIsNarrow(768);
+
+  // Particle count: 50 on desktop, 24 on phones, 12 frozen-frame for reduced-motion.
+  // The chamber composition still reads at lower counts; framer-motion arrays
+  // and SVG turbulence + bloom are the heavy bits, not the particle count alone,
+  // but every dot saves an `animate` array on the GPU compositor.
+  const particleCount = reduced ? 12 : narrow ? 24 : 50;
+  const badPuffCount = reduced ? 0 : narrow ? 4 : 8;
+
   const nodes = useMemo(() => buildNodes(), []);
-  const particlePlans = useMemo(() => planParticles(7, nodes, 50), [nodes]);
-  const badPuffs = useMemo(() => Array.from({ length: 8 }, (_, i) => i), []);
+  const particlePlans = useMemo(
+    () => planParticles(7, nodes, particleCount),
+    [nodes, particleCount],
+  );
+  const badPuffs = useMemo(
+    () => Array.from({ length: badPuffCount }, (_, i) => i),
+    [badPuffCount],
+  );
 
   // tooltip state — uses screen coords + container offset
   const wrapRef = useRef<HTMLDivElement | null>(null);
@@ -485,15 +531,8 @@ export function FilterChamber() {
     return () => window.removeEventListener("keydown", fn);
   }, []);
 
-  // body scroll-lock while modal is open
-  useEffect(() => {
-    if (!selected) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, [selected]);
+  // body scroll-lock while modal is open — iOS-safe via class + position fix
+  useBodyScrollLock(selected !== null);
 
   return (
     <div
@@ -588,17 +627,20 @@ export function FilterChamber() {
             opacity="0.95"
           />
           {/* secondary swirl */}
-          <motion.path
-            d={`M ${GOOD_ENTRY.x - 18} 40
+          {!reduced && (
+            <motion.path
+              data-motion-decoration="true"
+              d={`M ${GOOD_ENTRY.x - 18} 40
                 Q ${GOOD_ENTRY.x + 6} 110 ${GOOD_ENTRY.x - 8} ${GOOD_ENTRY.y - 40}
                 Q ${GOOD_ENTRY.x + 12} ${GOOD_ENTRY.y - 18} ${GOOD_ENTRY.x + 18} ${GOOD_ENTRY.y - 50}
                 Q ${GOOD_ENTRY.x + 4} 90 ${GOOD_ENTRY.x + 14} 40 Z`}
-            fill="url(#fc-rainbow-stream)"
-            filter="url(#fc-turb)"
-            opacity="0.7"
-            animate={{ opacity: [0.5, 0.85, 0.5] }}
-            transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-          />
+              fill="url(#fc-rainbow-stream)"
+              filter="url(#fc-turb)"
+              opacity="0.7"
+              animate={{ opacity: [0.5, 0.85, 0.5] }}
+              transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+            />
+          )}
         </g>
 
         {/* ---------- DARK INK COLUMN (bad intent) ---------- */}
@@ -734,7 +776,7 @@ export function FilterChamber() {
 
         {/* ---------- PARTICLES (random walk through nodes) ---------- */}
         {particlePlans.map((p) => (
-          <ParticleStream key={`p-${p.id}`} plan={p} />
+          <ParticleStream key={`p-${p.id}`} plan={p} reduced={reduced} />
         ))}
 
         {/* ---------- DARK CONVERGENCE STREAM under chamber ---------- */}
@@ -765,6 +807,7 @@ export function FilterChamber() {
             cy={e.y}
             label={e.label}
             darkness={i === 0 ? 0.25 : i === 1 ? 0.55 : 0.95}
+            reduced={reduced}
           />
         ))}
 
@@ -887,15 +930,15 @@ export function FilterChamber() {
               aria-label="Close"
               style={{
                 position: "absolute",
-                top: 12,
-                right: 12,
+                top: 8,
+                right: 8,
                 background: "transparent",
                 border: "1px solid var(--border-mid)",
                 color: "var(--paper)",
-                width: 32,
-                height: 32,
+                width: 44,
+                height: 44,
                 cursor: "pointer",
-                fontSize: 20,
+                fontSize: 22,
                 lineHeight: 1,
                 fontFamily:
                   "'JetBrains Mono', ui-monospace, monospace",
@@ -904,6 +947,7 @@ export function FilterChamber() {
                 justifyContent: "center",
                 padding: 0,
                 borderRadius: 2,
+                touchAction: "manipulation",
                 transition: "border-color .15s, color .15s",
               }}
               onMouseEnter={(e) => {
@@ -926,7 +970,7 @@ export function FilterChamber() {
                 textTransform: "uppercase",
                 color: selected.color,
                 marginBottom: 14,
-                paddingRight: 44,
+                paddingRight: 56,
               }}
             >
               {selected.m.year} · {selected.m.originator} · {selected.m.field}

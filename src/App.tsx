@@ -133,7 +133,8 @@ function CategoryFilter({
           onClick={() => setActive("all")}
           className="font-mono"
           style={{
-            padding: "6px 12px",
+            padding: "10px 14px",
+            minHeight: 44,
             border: `1px solid ${active === "all" ? "var(--ivory)" : "var(--border-mid)"}`,
             background: active === "all" ? "var(--ivory)" : "transparent",
             color: active === "all" ? "var(--bg)" : "var(--ink-paper, #d8cfb8)",
@@ -142,6 +143,7 @@ function CategoryFilter({
             textTransform: "uppercase",
             cursor: "pointer",
             transition: "all .15s",
+            touchAction: "manipulation",
           }}
         >
           All twenty-two
@@ -155,7 +157,8 @@ function CategoryFilter({
               onClick={() => setActive(key)}
               className="font-mono"
               style={{
-                padding: "6px 12px",
+                padding: "10px 14px",
+                minHeight: 44,
                 border: `1px solid ${isActive ? "var(--ivory)" : "var(--border-mid)"}`,
                 background: isActive ? "var(--ivory)" : "transparent",
                 color: isActive ? "var(--bg)" : "var(--paper)",
@@ -167,6 +170,7 @@ function CategoryFilter({
                 alignItems: "center",
                 gap: 8,
                 transition: "all .15s",
+                touchAction: "manipulation",
               }}
             >
               <span
@@ -582,15 +586,16 @@ function TabBar({
   tab: Tab;
   setTab: (t: Tab) => void;
 }) {
-  const items: { id: Tab; label: string; n: string }[] = [
-    { id: "chamber", label: "The Filter", n: "I" },
-    { id: "lineage", label: "Lineage", n: "II" },
-    { id: "alternatives", label: "Other Names", n: "III" },
-    { id: "origin", label: "Origin (2016)", n: "IV" },
-    { id: "where-it-works", label: "Where it Works", n: "V" },
+  const items: { id: Tab; label: string; shortLabel: string; n: string }[] = [
+    { id: "chamber", label: "The Filter", shortLabel: "Filter", n: "I" },
+    { id: "lineage", label: "Lineage", shortLabel: "Lineage", n: "II" },
+    { id: "alternatives", label: "Other Names", shortLabel: "Names", n: "III" },
+    { id: "origin", label: "Origin (2016)", shortLabel: "Origin", n: "IV" },
+    { id: "where-it-works", label: "Where it Works", shortLabel: "Works", n: "V" },
   ];
   return (
     <nav
+      className="tabbar-pad-top"
       style={{
         position: "sticky",
         top: 0,
@@ -602,8 +607,13 @@ function TabBar({
       }}
     >
       <div
-        className="col-wide px-5 flex items-center"
-        style={{ height: 52, gap: 28 }}
+        className="col-wide tabbar-scroll flex items-center"
+        style={{
+          minHeight: 52,
+          paddingLeft: 20,
+          paddingRight: 20,
+          gap: 22,
+        }}
       >
         <span
           className="font-mono"
@@ -612,22 +622,26 @@ function TabBar({
             letterSpacing: "0.28em",
             textTransform: "uppercase",
             color: "var(--mute)",
+            flexShrink: 0,
           }}
+          aria-hidden="true"
         >
           ペシ魔鉄則
         </span>
-        <div style={{ flex: 1 }} />
         {items.map((it) => {
           const active = tab === it.id;
           return (
             <button
               key={it.id}
               onClick={() => setTab(it.id)}
+              aria-current={active ? "page" : undefined}
+              aria-label={it.label}
               className="font-mono"
               style={{
                 background: "transparent",
                 border: "none",
-                padding: "8px 0",
+                padding: "14px 4px",
+                minHeight: 44,
                 cursor: "pointer",
                 color: active ? "var(--ivory)" : "var(--mute)",
                 fontSize: 11,
@@ -637,12 +651,16 @@ function TabBar({
                   ? "1px solid var(--amber)"
                   : "1px solid transparent",
                 transition: "color .15s, border-color .15s",
+                flexShrink: 0,
+                whiteSpace: "nowrap",
+                touchAction: "manipulation",
               }}
             >
               <span style={{ color: "var(--dim)", marginRight: 8 }}>
                 {it.n}
               </span>
-              {it.label}
+              <span className="hidden sm:inline">{it.label}</span>
+              <span className="sm:hidden">{it.shortLabel}</span>
             </button>
           );
         })}

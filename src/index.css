@@ -114,7 +114,10 @@ button {
   font-weight: 500;
   line-height: 1;
   letter-spacing: -0.02em;
-  font-size: clamp(3.4rem, 11vw, 7.5rem);
+  /* Lower clamp floor lowered to 2.8rem so the 5-char kanji ペシ魔鉄則
+     does not overflow on 320px viewports — Japanese glyphs render
+     full-width and were just barely fitting at 3.4rem. */
+  font-size: clamp(2.8rem, 11vw, 7.5rem);
 }
 .d-xl {
   font-family: "Fraunces", ui-serif, serif;
@@ -196,4 +199,72 @@ html {
 /* prevent layout shifts in animation containers */
 .chamber-wrap {
   contain: layout paint;
+}
+
+/* ---------- mobile / accessibility ---------- */
+
+/* Body scroll lock used by modals — survives iOS Safari, where overflow:hidden
+   on body is silently ignored. The component preserves scroll position via JS. */
+body.is-scroll-locked {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  overflow: hidden;
+  /* top is set inline by the lock helper to preserve scroll position */
+}
+
+/* Safe areas for the sticky tab bar on notched iPhones. */
+.tabbar-pad-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* Tab bar: horizontal-scroll-with-momentum on narrow screens so 5 tabs do
+   not wrap or push off-screen. The container fades scrollbar visuals; users
+   swipe to reach tabs that don't fit. */
+.tabbar-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x proximity;
+}
+.tabbar-scroll::-webkit-scrollbar {
+  display: none;
+}
+.tabbar-scroll > * {
+  scroll-snap-align: start;
+}
+
+/* Reduced motion — pause continuous chamber animation but keep the
+   composition legible. The chamber's static frame still reads as a diagram. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  /* hide the dark cloud and the rainbow secondary swirl since they only
+     express themselves through motion */
+  .chamber-wrap [data-motion-decoration="true"] {
+    display: none !important;
+  }
+}
+
+/* iOS Safari: prevent text auto-zoom on inputs (none here, but defensive). */
+@supports (-webkit-touch-callout: none) {
+  input, textarea, select {
+    font-size: 16px;
+  }
+}
+
+/* On narrow screens, tighten the catalog source line so it's still readable
+   without dropping under the iOS soft auto-zoom threshold. */
+@media (max-width: 480px) {
+  .b-sm {
+    font-size: 16px;
+  }
 }

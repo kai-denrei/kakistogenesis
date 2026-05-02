@@ -7,6 +7,7 @@ import {
   type LineageEntry,
   type TraditionKey,
 } from "../data/lineage";
+import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
 
 /**
  * Lineage tab — pre-modern history of the filter.
@@ -209,15 +210,8 @@ function LineageModal({
     return () => window.removeEventListener("keydown", onKey);
   }, [entry, onClose]);
 
-  // body scroll-lock while modal open
-  useEffect(() => {
-    if (!entry) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, [entry]);
+  // body scroll-lock while modal open — iOS-safe
+  useBodyScrollLock(entry !== null);
 
   if (!entry) return null;
   const tint = TRADITIONS[entry.tradition].tint;
@@ -264,15 +258,15 @@ function LineageModal({
           aria-label="Close"
           style={{
             position: "absolute",
-            top: 12,
-            right: 12,
+            top: 8,
+            right: 8,
             background: "transparent",
             border: "1px solid var(--border-mid)",
             color: "var(--paper)",
-            width: 32,
-            height: 32,
+            width: 44,
+            height: 44,
             cursor: "pointer",
-            fontSize: 20,
+            fontSize: 22,
             lineHeight: 1,
             fontFamily: "'JetBrains Mono', ui-monospace, monospace",
             display: "flex",
@@ -280,6 +274,7 @@ function LineageModal({
             justifyContent: "center",
             padding: 0,
             borderRadius: 2,
+            touchAction: "manipulation",
             transition: "border-color .15s, color .15s",
           }}
           onMouseEnter={(e) => {
@@ -302,7 +297,7 @@ function LineageModal({
             textTransform: "uppercase",
             color: tint,
             marginBottom: 12,
-            paddingRight: 44,
+            paddingRight: 56,
           }}
         >
           {TRADITIONS[entry.tradition].label} · {entry.year} · {entry.originator}
