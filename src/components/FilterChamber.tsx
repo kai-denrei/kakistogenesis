@@ -430,6 +430,36 @@ const SPLIT_OVERRIDES: Record<string, [string, string]> = {
   "Epistemic Capture": ["Epistemic", "Capture"],
 };
 
+/**
+ * Greedy word-wrap for the inline brief shown when a node blooms.
+ * Deterministic — no layout measurement; tuned against the 60–100 char
+ * briefs in mechanisms.ts / losses.ts. If a brief overflows `maxLines`,
+ * the last line is suffixed with an ellipsis.
+ */
+function wrapBrief(text: string, maxLines = 3, maxChars = 30): string[] {
+  const words = text.split(/\s+/).filter(Boolean);
+  const lines: string[] = [];
+  let cur = "";
+  let i = 0;
+  while (i < words.length && lines.length < maxLines) {
+    const w = words[i];
+    const tryLine = cur ? cur + " " + w : w;
+    if (tryLine.length > maxChars && cur) {
+      lines.push(cur);
+      cur = "";
+      continue;
+    }
+    cur = tryLine;
+    i++;
+  }
+  if (cur && lines.length < maxLines) lines.push(cur);
+  if (i < words.length && lines.length > 0) {
+    lines[lines.length - 1] =
+      lines[lines.length - 1].replace(/[\s.,;:]+$/, "") + "…";
+  }
+  return lines;
+}
+
 function splitLabel(name: string): [string] | [string, string] {
   const override = SPLIT_OVERRIDES[name];
   if (override) return override;
@@ -460,21 +490,43 @@ function splitLabel(name: string): [string] | [string, string] {
 
 function MechanismNode({
   node,
+  bloomed,
+  dimmed,
   onHover,
   onLeave,
   onSelect,
+  onBloom,
 }: {
   node: Node;
+  bloomed: boolean;
+  dimmed: boolean;
   onHover: (n: Node, x: number, y: number) => void;
   onLeave: () => void;
   onSelect: (n: Node) => void;
+  onBloom: (n: Node) => void;
 }) {
-  // Tap-vs-scroll discrimination: a vertical swipe that begins on a node must
-  // scroll the page, not open the modal. Track pointerdown coords + timestamp
-  // and only fire onSelect when movement stayed within ~10px and the press
-  // ended within 600ms. touchAction: pan-y lets the browser claim vertical
-  // pans natively before our handler ever runs.
+  // Tap-vs-scroll discrimination: vertical swipe must scroll the page, not
+  // open. On touch we also stage interaction in two: first tap blooms the
+  // node (label grows, brief renders inline), second tap on the same node
+  // commits to the modal. Mouse skips bloom and goes straight to the modal.
   const downRef = useRef<{ x: number; y: number; t: number } | null>(null);
+  const labelLines = splitLabel(node.m.name);
+  const briefLines = bloomed ? wrapBrief(node.m.brief) : [];
+  const haloR = bloomed ? 16 : 7;
+  const haloOpacity = bloomed ? 0.5 : dimmed ? 0.07 : 0.18;
+  const coreR = bloomed ? 7 : 3.4;
+  const coreOpacity = bloomed ? 1 : dimmed ? 0.4 : 0.95;
+  const hitR = bloomed ? 44 : 22;
+  const labelSize = bloomed ? 28 : 17;
+  const labelDy = bloomed ? 30 : 18;
+  const labelOpacity = bloomed ? 1 : dimmed ? 0.3 : 0.95;
+  const labelWeight = bloomed ? 500 : 400;
+  // Brief sits below the (possibly two-line) label. Hint sits below the brief.
+  const labelBottom = node.cy + 22 + (labelLines[1] ? labelDy : 0);
+  const briefStart = labelBottom + 28;
+  const briefDy = 18;
+  const hintY = briefStart + (briefLines.length - 1) * briefDy + 26;
+  const transition = { duration: 0.18, ease: "easeOut" } as const;
   return (
     <g
       style={{ cursor: "pointer", touchAction: "pan-y" }}
@@ -493,54 +545,92 @@ function MechanismNode({
         if (dx * dx + dy * dy > 100) return;
         if (e.timeStamp - d.t > 600) return;
         e.stopPropagation();
-        onSelect(node);
+        if (e.pointerType === "mouse") {
+          onSelect(node);
+          return;
+        }
+        if (bloomed) {
+          onSelect(node);
+        } else {
+          onBloom(node);
+        }
       }}
       onPointerCancel={() => {
         downRef.current = null;
       }}
     >
-      {/* invisible larger hit area — 22px radius gives ~44px touch diameter */}
-      <circle cx={node.cx} cy={node.cy} r={22} fill="transparent" />
+      {/* invisible hit area — grows to 88px diameter when bloomed for an
+          easy second-tap target */}
+      <circle cx={node.cx} cy={node.cy} r={hitR} fill="transparent" />
       {/* outer halo */}
-      <circle
+      <motion.circle
         cx={node.cx}
         cy={node.cy}
-        r={7}
         fill={node.color}
-        opacity={0.18}
+        initial={false}
+        animate={{ r: haloR, opacity: haloOpacity }}
+        transition={transition}
       />
       {/* core dot */}
-      <circle
+      <motion.circle
         cx={node.cx}
         cy={node.cy}
-        r={3.4}
         fill={node.color}
-        opacity={0.95}
+        initial={false}
+        animate={{ r: coreR, opacity: coreOpacity }}
+        transition={transition}
       />
-      {/* label below — two-line split for legibility */}
-      {(() => {
-        const lines = splitLabel(node.m.name);
-        return (
+      {/* label below */}
+      <text
+        x={node.cx}
+        y={node.cy + 22}
+        textAnchor="middle"
+        fontFamily="'EB Garamond', ui-serif, Georgia, serif"
+        fontStyle="italic"
+        fontSize={labelSize}
+        fontWeight={labelWeight}
+        fill="#ece4d0"
+        opacity={labelOpacity}
+        style={{ pointerEvents: "none" }}
+      >
+        <tspan x={node.cx}>{labelLines[0]}</tspan>
+        {labelLines[1] !== undefined && (
+          <tspan x={node.cx} dy={labelDy}>
+            {labelLines[1]}
+          </tspan>
+        )}
+      </text>
+      {bloomed && briefLines.length > 0 && (
+        <g style={{ pointerEvents: "none" }}>
           <text
             x={node.cx}
-            y={node.cy + 22}
             textAnchor="middle"
             fontFamily="'EB Garamond', ui-serif, Georgia, serif"
             fontStyle="italic"
-            fontSize="17"
-            fill="#ece4d0"
-            opacity={0.95}
-            style={{ pointerEvents: "none" }}
+            fontSize="14"
+            fill="#d8cfb8"
+            opacity={0.92}
           >
-            <tspan x={node.cx}>{lines[0]}</tspan>
-            {lines[1] !== undefined && (
-              <tspan x={node.cx} dy={18}>
-                {lines[1]}
+            {briefLines.map((line, i) => (
+              <tspan key={i} x={node.cx} y={briefStart + i * briefDy}>
+                {line}
               </tspan>
-            )}
+            ))}
           </text>
-        );
-      })()}
+          <text
+            x={node.cx}
+            y={hintY}
+            textAnchor="middle"
+            fontFamily="'JetBrains Mono', ui-monospace, monospace"
+            fontSize="10"
+            letterSpacing="0.18em"
+            fill="#a89e8a"
+            opacity={0.85}
+          >
+            TAP AGAIN TO OPEN
+          </text>
+        </g>
+      )}
     </g>
   );
 }
@@ -655,18 +745,39 @@ function BadIntentCloud({ id, seed }: { id: number; seed: number }) {
 
 function CostNodeGlyph({
   cn,
+  bloomed,
+  dimmed,
   onHover,
   onLeave,
   onSelect,
+  onBloom,
 }: {
   cn: CostNode;
+  bloomed: boolean;
+  dimmed: boolean;
   onHover: (cn: CostNode, x: number, y: number) => void;
   onLeave: () => void;
   onSelect: (cn: CostNode) => void;
+  onBloom: (cn: CostNode) => void;
 }) {
   const color = LOSS_CATEGORIES[cn.loss.category].color;
-  // Same tap-vs-scroll guard as MechanismNode.
   const downRef = useRef<{ x: number; y: number; t: number } | null>(null);
+  const labelLines = splitLabel(cn.display);
+  const briefLines = bloomed ? wrapBrief(cn.loss.brief) : [];
+  const haloR = bloomed ? 17 : 8;
+  const haloOpacity = bloomed ? 0.5 : dimmed ? 0.07 : 0.18;
+  const coreR = bloomed ? 8 : 4.2;
+  const coreOpacity = bloomed ? 1 : dimmed ? 0.4 : 0.95;
+  const hitR = bloomed ? 44 : 22;
+  const labelSize = bloomed ? 28 : 17;
+  const labelDy = bloomed ? 30 : 18;
+  const labelOpacity = bloomed ? 1 : dimmed ? 0.3 : 0.95;
+  const labelWeight = bloomed ? 500 : 400;
+  const labelBottom = cn.cy + 24 + (labelLines[1] ? labelDy : 0);
+  const briefStart = labelBottom + 28;
+  const briefDy = 18;
+  const hintY = briefStart + (briefLines.length - 1) * briefDy + 26;
+  const transition = { duration: 0.18, ease: "easeOut" } as const;
   return (
     <g
       style={{ cursor: "pointer", touchAction: "pan-y" }}
@@ -685,42 +796,87 @@ function CostNodeGlyph({
         if (dx * dx + dy * dy > 100) return;
         if (e.timeStamp - d.t > 600) return;
         e.stopPropagation();
-        onSelect(cn);
+        if (e.pointerType === "mouse") {
+          onSelect(cn);
+          return;
+        }
+        if (bloomed) {
+          onSelect(cn);
+        } else {
+          onBloom(cn);
+        }
       }}
       onPointerCancel={() => {
         downRef.current = null;
       }}
     >
-      {/* invisible larger hit area — ~44px diameter */}
-      <circle cx={cn.cx} cy={cn.cy} r={22} fill="transparent" />
-      {/* outer halo */}
-      <circle cx={cn.cx} cy={cn.cy} r={8} fill={color} opacity={0.18} />
-      {/* core dot */}
-      <circle cx={cn.cx} cy={cn.cy} r={4.2} fill={color} opacity={0.95} />
-      {/* italic label below — two-line split for legibility */}
-      {(() => {
-        const lines = splitLabel(cn.display);
-        return (
+      <circle cx={cn.cx} cy={cn.cy} r={hitR} fill="transparent" />
+      <motion.circle
+        cx={cn.cx}
+        cy={cn.cy}
+        fill={color}
+        initial={false}
+        animate={{ r: haloR, opacity: haloOpacity }}
+        transition={transition}
+      />
+      <motion.circle
+        cx={cn.cx}
+        cy={cn.cy}
+        fill={color}
+        initial={false}
+        animate={{ r: coreR, opacity: coreOpacity }}
+        transition={transition}
+      />
+      <text
+        x={cn.cx}
+        y={cn.cy + 24}
+        textAnchor="middle"
+        fontFamily="'EB Garamond', ui-serif, Georgia, serif"
+        fontStyle="italic"
+        fontSize={labelSize}
+        fontWeight={labelWeight}
+        fill="#ece4d0"
+        opacity={labelOpacity}
+        style={{ pointerEvents: "none" }}
+      >
+        <tspan x={cn.cx}>{labelLines[0]}</tspan>
+        {labelLines[1] !== undefined && (
+          <tspan x={cn.cx} dy={labelDy}>
+            {labelLines[1]}
+          </tspan>
+        )}
+      </text>
+      {bloomed && briefLines.length > 0 && (
+        <g style={{ pointerEvents: "none" }}>
           <text
             x={cn.cx}
-            y={cn.cy + 24}
             textAnchor="middle"
             fontFamily="'EB Garamond', ui-serif, Georgia, serif"
             fontStyle="italic"
-            fontSize="17"
-            fill="#ece4d0"
-            opacity={0.95}
-            style={{ pointerEvents: "none" }}
+            fontSize="14"
+            fill="#d8cfb8"
+            opacity={0.92}
           >
-            <tspan x={cn.cx}>{lines[0]}</tspan>
-            {lines[1] !== undefined && (
-              <tspan x={cn.cx} dy={18}>
-                {lines[1]}
+            {briefLines.map((line, i) => (
+              <tspan key={i} x={cn.cx} y={briefStart + i * briefDy}>
+                {line}
               </tspan>
-            )}
+            ))}
           </text>
-        );
-      })()}
+          <text
+            x={cn.cx}
+            y={hintY}
+            textAnchor="middle"
+            fontFamily="'JetBrains Mono', ui-monospace, monospace"
+            fontSize="10"
+            letterSpacing="0.18em"
+            fill="#a89e8a"
+            opacity={0.85}
+          >
+            TAP AGAIN TO OPEN
+          </text>
+        </g>
+      )}
     </g>
   );
 }
@@ -877,6 +1033,15 @@ export function FilterChamber() {
     | { kind: "mech"; node: Node }
     | { kind: "cost"; cn: CostNode };
   const [selected, setSelected] = useState<SelState | null>(null);
+  // Touch-only "bloomed" focus: first tap on a node enlarges it and shows the
+  // brief inline; second tap on the same node opens the modal. Mouse skips
+  // bloom and goes direct to modal (existing desktop flow).
+  const [bloom, setBloom] = useState<SelState | null>(null);
+
+  const isMechBloomed = (n: Node): boolean =>
+    bloom?.kind === "mech" && bloom.node.m.id === n.m.id;
+  const isCostBloomed = (cn: CostNode): boolean =>
+    bloom?.kind === "cost" && bloom.cn.id === cn.id;
 
   const onHover = (node: Node, clientX: number, clientY: number) => {
     if (selected) return;
@@ -893,20 +1058,49 @@ export function FilterChamber() {
   const onLeave = () => setTip(null);
   const onSelect = (node: Node) => {
     setTip(null);
+    setBloom(null);
     setSelected({ kind: "mech", node });
   };
   const onCostSelect = (cn: CostNode) => {
     setTip(null);
+    setBloom(null);
     setSelected({ kind: "cost", cn });
+  };
+  const onBloomMech = (node: Node) => {
+    setTip(null);
+    setBloom({ kind: "mech", node });
+  };
+  const onBloomCost = (cn: CostNode) => {
+    setTip(null);
+    setBloom({ kind: "cost", cn });
   };
   const closeModal = () => setSelected(null);
 
-  // close tooltip / modal on escape
+  // Tap-on-empty-SVG-area to clear a bloom. Uses the same movement+time guard
+  // as the per-node tap handler; nodes call e.stopPropagation in their own
+  // pointerup, so this handler only fires on a "missed" tap.
+  const wrapDownRef = useRef<{ x: number; y: number; t: number } | null>(null);
+  const onWrapPointerDown = (e: React.PointerEvent) => {
+    wrapDownRef.current = { x: e.clientX, y: e.clientY, t: e.timeStamp };
+  };
+  const onWrapPointerUp = (e: React.PointerEvent) => {
+    const d = wrapDownRef.current;
+    wrapDownRef.current = null;
+    if (!d) return;
+    const dx = e.clientX - d.x;
+    const dy = e.clientY - d.y;
+    if (dx * dx + dy * dy > 100) return;
+    if (e.timeStamp - d.t > 600) return;
+    if (bloom) setBloom(null);
+  };
+
+  // close tooltip / modal / bloom on escape
   useEffect(() => {
     const fn = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         setTip(null);
         setSelected(null);
+        setBloom(null);
       }
     };
     window.addEventListener("keydown", fn);
@@ -922,6 +1116,8 @@ export function FilterChamber() {
       className="chamber-wrap"
       style={{ position: "relative" }}
       aria-label="The Filter Chamber, animated"
+      onPointerDown={onWrapPointerDown}
+      onPointerUp={onWrapPointerUp}
     >
       <svg
         viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
@@ -1140,16 +1336,23 @@ export function FilterChamber() {
           );
         })}
 
-        {/* ---------- MECHANISM NODES ---------- */}
-        {nodes.map((n) => (
-          <MechanismNode
-            key={n.m.id}
-            node={n}
-            onHover={onHover}
-            onLeave={onLeave}
-            onSelect={onSelect}
-          />
-        ))}
+        {/* ---------- MECHANISM NODES ----------
+            The bloomed node is skipped here and re-rendered at the very end
+            of the SVG so it sits on top of particles and filaments. */}
+        {nodes
+          .filter((n) => !isMechBloomed(n))
+          .map((n) => (
+            <MechanismNode
+              key={n.m.id}
+              node={n}
+              bloomed={false}
+              dimmed={bloom !== null}
+              onHover={onHover}
+              onLeave={onLeave}
+              onSelect={onSelect}
+              onBloom={onBloomMech}
+            />
+          ))}
 
         {/* ---------- BAD-INTENT CLOUD PUFFS (drawn under particles) ---------- */}
         {badPuffs.map((i) => (
@@ -1225,25 +1428,36 @@ export function FilterChamber() {
           header="§ — SOCIAL & EPISTEMIC"
         />
 
-        {/* ---------- COST NODES (ten dots) ---------- */}
-        {dieA.map((cn) => (
-          <CostNodeGlyph
-            key={cn.id}
-            cn={cn}
-            onHover={onCostHover}
-            onLeave={onLeave}
-            onSelect={onCostSelect}
-          />
-        ))}
-        {dieB.map((cn) => (
-          <CostNodeGlyph
-            key={cn.id}
-            cn={cn}
-            onHover={onCostHover}
-            onLeave={onLeave}
-            onSelect={onCostSelect}
-          />
-        ))}
+        {/* ---------- COST NODES (ten dots) ----------
+            Bloomed cost node skipped here; re-rendered as the final overlay. */}
+        {dieA
+          .filter((cn) => !isCostBloomed(cn))
+          .map((cn) => (
+            <CostNodeGlyph
+              key={cn.id}
+              cn={cn}
+              bloomed={false}
+              dimmed={bloom !== null}
+              onHover={onCostHover}
+              onLeave={onLeave}
+              onSelect={onCostSelect}
+              onBloom={onBloomCost}
+            />
+          ))}
+        {dieB
+          .filter((cn) => !isCostBloomed(cn))
+          .map((cn) => (
+            <CostNodeGlyph
+              key={cn.id}
+              cn={cn}
+              bloomed={false}
+              dimmed={bloom !== null}
+              onHover={onCostHover}
+              onLeave={onLeave}
+              onSelect={onCostSelect}
+              onBloom={onBloomCost}
+            />
+          ))}
 
         {/* ---------- OUTPUT GRADIENT LABEL ---------- */}
         <g
@@ -1269,6 +1483,32 @@ export function FilterChamber() {
             2% of psychopaths ruining it
           </text>
         </g>
+
+        {/* ---------- BLOOM OVERLAY ----------
+            The currently-bloomed node, re-rendered last so it sits above
+            particles, filaments, and its sibling nodes. */}
+        {bloom && bloom.kind === "mech" && (
+          <MechanismNode
+            node={bloom.node}
+            bloomed={true}
+            dimmed={false}
+            onHover={onHover}
+            onLeave={onLeave}
+            onSelect={onSelect}
+            onBloom={onBloomMech}
+          />
+        )}
+        {bloom && bloom.kind === "cost" && (
+          <CostNodeGlyph
+            cn={bloom.cn}
+            bloomed={true}
+            dimmed={false}
+            onHover={onCostHover}
+            onLeave={onLeave}
+            onSelect={onCostSelect}
+            onBloom={onBloomCost}
+          />
+        )}
       </svg>
 
       {/* ---------- TOOLTIP (HTML overlay, follows cursor) ---------- */}
